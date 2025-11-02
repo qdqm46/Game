@@ -5,7 +5,6 @@ const livesDisplay = document.getElementById('lives');
 const attackSound = document.getElementById('attack-sound');
 const coinSound = document.getElementById('coin-sound');
 const winSound = document.getElementById('win-sound');
-const explosionSound = document.getElementById('explosion-sound');
 
 let keys = {};
 let paused = false;
@@ -15,8 +14,6 @@ let score = 0;
 let lives = 3;
 let lastSpawnX = 0;
 let nextCheckpoint = 1000;
-let comboCount = 0;
-let comboTimer = 0;
 
 const player = {
   x: 100,
@@ -37,14 +34,27 @@ const playerRightImg = new Image();
 playerRightImg.src = 'player-right.png';
 const playerLeftImg = new Image();
 playerLeftImg.src = 'player-left.png';
-const patrolImg = new Image();
-patrolImg.src = 'enemy-patrol.png';
-const jumperImg = new Image();
-jumperImg.src = 'enemy-jumper.png';
-const explosionImg = new Image();
-explosionImg.src = 'explosion.png';
+const enemyRightImg = new Image();
+enemyRightImg.src = 'enemy-right.png';
+const enemyLeftImg = new Image();
+enemyLeftImg.src = 'enemy-left.png';
 
 let blocks = [], enemies = [], coins = [], checkpoints = [];
+
+document.getElementById('start-button').addEventListener('click', () => {
+  document.getElementById('start-menu').style.display = 'none';
+
+  if (canvas.requestFullscreen) {
+    canvas.requestFullscreen();
+  } else if (canvas.webkitRequestFullscreen) {
+    canvas.webkitRequestFullscreen();
+  } else if (canvas.msRequestFullscreen) {
+    canvas.msRequestFullscreen();
+  }
+
+  generateWorldSegment();
+  gameLoop();
+});
 
 document.addEventListener('keydown', e => keys[e.code] = true);
 document.addEventListener('keyup', e => keys[e.code] = false);
@@ -79,22 +89,26 @@ function generateWorldSegment() {
   const segmentStart = lastSpawnX + 400;
   const segmentEnd = segmentStart + 800;
 
-  for (let i = segmentStart; i < segmentEnd; i += 400) {
-    blocks.push({ x: i, y: 160, width: 200, height: 40 });
-    coins.push({ x: i + 100, y: 100, width: 60, height: 60 });
-  }
+  for (let i = segmentStart + 100; i < segmentEnd; i += 400) {
+    blocks.push({
+      x: i,
+      y: groundY - player.hitboxHeight,
+      width: 40,
+      height: player.hitboxHeight
+    });
 
-  for (let i = segmentStart + 200; i < segmentEnd; i += 600) {
-    blocks.push({ x: i, y: 80, width: 160, height: 40 });
-  }
-
-  for (let i = segmentStart + 300; i < segmentEnd; i += 500) {
-    const tipo = Math.random() < 0.5 ? 'patrullador' : 'saltador';
-    const sprite = tipo === 'patrullador' ? patrolImg : jumperImg;
+    const platformX = i + 200;
+    const platformWidth = 200;
+    blocks.push({
+      x: platformX,
+      y: 160,
+      width: platformWidth,
+      height: 40
+    });
 
     enemies.push({
-      x: i,
-      y: groundY - 248,
+      x: platformX + 20,
+      y: 160 - 248,
       width: 248,
       height: 248,
       hitboxOffsetX: 80,
@@ -102,15 +116,24 @@ function generateWorldSegment() {
       hitboxWidth: 88,
       hitboxHeight: 128,
       hp: 1,
-      dx: tipo === 'patrullador' ? (Math.random() < 0.5 ? -2 : 2) : 0,
-      dy: tipo === 'saltador' ? (Math.random() < 0.5 ? -2 : 2) : 0,
-      type: tipo,
-      sprite: sprite,
-      exploding: false,
-      explosionTimer: 0,
-      active: true
+      dx: 2,
+      active: true,
+      patrolMin: platformX,
+      patrolMax: platformX + platformWidth - 248
     });
   }
+
+  const floatingX = segmentStart + 300;
+  const floatingY = 120;
+  blocks.push({
+    x: floatingX,
+    y: floatingY,
+    width: 160,
+    height: 40,
+    floating: true,
+    dx: 2,
+    range: { min: floatingX - 100, max: floatingX + 100 }
+  });
 
   if (segmentEnd >= nextCheckpoint) {
     checkpoints.push({
@@ -127,7 +150,6 @@ function generateWorldSegment() {
 
   lastSpawnX = segmentEnd;
 }
-
 function updatePlayer() {
   if (keys['ArrowRight']) {
     player.x += 4;
@@ -141,6 +163,7 @@ function updatePlayer() {
   player.dy += 1.2;
   player.y += player.dy;
 
+  // Colisión con el suelo
   if (player.y + player.height >= groundY) {
     player.y = groundY - player.height;
     player.dy = 0;
@@ -150,11 +173,31 @@ function updatePlayer() {
   blocks.forEach(block => {
     const hitbox = {
       x: player.x + player.hitboxOffsetX,
-      y: player.y + player.hitboxOffsetY + player.dy,
+      y: player.y + player.hitboxOffsetY,
       width: player.hitboxWidth,
       height: player.hitboxHeight
     };
-    if (detectCollision(hitbox, block) && player.dy >= 0) {
+
+    // Colisión desde abajo (saltando)
+    if (
+      player.dy < 0 &&
+      hitbox.y <= block.y + block.height &&
+      hitbox.y + hitbox.height > block.y + block.height &&
+      hitbox.x < block.x + block.width &&
+      hitbox.x + hitbox.width > block.x
+    ) {
+      player.dy = 0;
+      player.y = block.y + block.height - player.hitboxOffsetY;
+    }
+
+    // Colisión desde arriba (cayendo)
+    if (
+      player.dy >= 0 &&
+      hitbox.y + hitbox.height >= block.y &&
+      hitbox.y < block.y &&
+      hitbox.x < block.x + block.width &&
+      hitbox.x + hitbox.width > block.x
+    ) {
       player.y = block.y - player.hitboxOffsetY - player.hitboxHeight;
       player.dy = 0;
       player.grounded = true;
@@ -166,46 +209,30 @@ function updatePlayer() {
   }
 }
 
+function updateBlocks() {
+  blocks.forEach(block => {
+    if (block.floating) {
+      block.x += block.dx;
+      if (block.x < block.range.min || block.x > block.range.max) {
+        block.dx *= -1;
+      }
+    }
+  });
+}
+
 function updateEnemies() {
   enemies.forEach(en => {
     if (!en.active) return;
 
-    if (en.exploding) {
-      en.explosionTimer--;
-      if (en.explosionTimer <= 0) {
-        en.hp = 0;
+    const progressFactor = Math.floor(player.x / 1000);
+    const speed = 2 + progressFactor * 0.5;
+    en.x += en.dx >= 0 ? speed : -speed;
+
+    if (en.patrolMin !== undefined && en.patrolMax !== undefined) {
+      if (en.x < en.patrolMin || en.x > en.patrolMax) {
+        en.dx *= -1;
+        en.x = Math.max(en.patrolMin, Math.min(en.x, en.patrolMax));
       }
-      return;
-    }
-
-    if (en.type === 'patrullador') {
-      en.x += en.dx;
-      blocks.forEach(block => {
-        const hitbox = {
-          x: en.x + en.hitboxOffsetX,
-          y: en.y + en.hitboxOffsetY,
-          width: en.hitboxWidth,
-          height: en.hitboxHeight
-        };
-        if (detectCollision(hitbox, block)) {
-          en.dx *= -1;
-        }
-      });
-    }
-
-    if (en.type === 'saltador') {
-      en.y += en.dy;
-      blocks.forEach(block => {
-        const hitbox = {
-          x: en.x + en.hitboxOffsetX,
-          y: en.y + en.hitboxOffsetY,
-          width: en.hitboxWidth,
-          height: en.hitboxHeight
-        };
-        if (detectCollision(hitbox, block)) {
-          en.dy *= -1;
-        }
-      });
     }
 
     const playerHitbox = {
@@ -222,23 +249,9 @@ function updateEnemies() {
       height: en.hitboxHeight
     };
 
-    if (player.attack && detectCollision(playerHitbox, enemyHitbox)) {
-      if (!en.exploding) {
-        en.exploding = true;
-        en.explosionTimer = 30;
-        explosionSound.play();
-        comboCount++;
-        comboTimer = 120;
-        score += 10 + comboCount * 2;
-        scoreDisplay.textContent = score;
-      }
-    }
-
-    if (!player.attack && detectCollision(playerHitbox, enemyHitbox)) {
+    if (detectCollision(playerHitbox, enemyHitbox)) {
       lives--;
       livesDisplay.textContent = lives;
-      comboCount = 0;
-      comboTimer = 0;
       if (lives <= 0) {
         alert('¡Has perdido!');
         location.reload();
@@ -270,10 +283,10 @@ function checkCheckpoints() {
       cp.triggered = true;
       const respuesta = prompt(cp.question);
       if (respuesta && respuesta.toLowerCase() === cp.answer.toLowerCase()) {
-  alert("¡Progreso guardado!");
-} else {
-  alert("Respuesta incorrecta.");
-}
+        alert("¡Progreso guardado!");
+      } else {
+        alert("Respuesta incorrecta.");
+      }
     }
   });
 }
@@ -293,8 +306,8 @@ function draw() {
   coins.forEach(c => ctx.fillRect(c.x, c.y, c.width, c.height));
 
   enemies.forEach(e => {
-    const sprite = e.exploding ? explosionImg : e.sprite;
-    ctx.drawImage(sprite, e.x, e.y, e.width, e.height);
+    const img = e.dx >= 0 ? enemyRightImg : enemyLeftImg;
+    ctx.drawImage(img, e.x, e.y, e.width, e.height);
   });
 
   ctx.fillStyle = 'purple';
@@ -343,19 +356,11 @@ function draw() {
 function gameLoop() {
   if (!paused) {
     updatePlayer();
+    updateBlocks();
     updateEnemies();
     updateCoins();
     checkCheckpoints();
     draw();
-
-    if (comboTimer > 0) {
-      comboTimer--;
-    } else {
-      comboCount = 0;
-    }
   }
   requestAnimationFrame(gameLoop);
 }
-
-generateWorldSegment();
-gameLoop();
