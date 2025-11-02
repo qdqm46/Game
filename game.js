@@ -187,4 +187,4 @@ function draw() {
   ctx.save();
   ctx.translate(-player.x + canvas.width / 2, 0);
 
-  const playerImg = player.direction === 'right' ? playerRightImg : playerLeftImg;
+  const
