@@ -1,28 +1,27 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Mario PNG Aventura</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Juego Infinito</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div id="start-menu">
+    <button id="start-button">Comenzar juego</button>
+  </div>
+
   <div id="hud">
-    <p>Puntos: <span id="score">0</span> | Vidas: <span id="lives">3</span></p>
-    <button onclick="togglePause()">⏸️ Pausa</button>
+    <span>Puntos: <span id="score">0</span></span>
+    <span>Vidas: <span id="lives">3</span></span>
   </div>
 
-  <canvas id="game" width="960" height="480"></canvas>
+  <canvas id="game" width="1280" height="720"></canvas>
 
-  <div id="victory-screen" style="display:none;">
-    <h2>🎉 ¡Nivel completado!</h2>
-    <p>¡Felicidades, Mohamed!</p>
-    <button onclick="location.reload()">Volver a jugar</button>
-  </div>
-
-  <audio id="attack-sound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_3e2e6c6b8e.mp3?filename=hit-3-102577.mp3"></audio>
-  <audio id="coin-sound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_4e2e6c6b8e.mp3?filename=coin-collect.mp3"></audio>
-  <audio id="win-sound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_1f2b6b6e8e.mp3?filename=success-1-6297.mp3"></audio>
-
-  <script src="game.js"></script>
+  <!-- Sonidos -->
+  <audio id="attack-sound" src="attack.mp3"></audio>
+  <audio id="coin-sound" src="coin.mp3"></audio>
+  <audio id="win-sound" src="win.mp3"></audio>
 </body>
+<script src="game.js"></script>
 </html>
