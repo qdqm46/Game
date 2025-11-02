@@ -15,7 +15,7 @@ let lives = 3;
 
 const player = {
   x: 100,
-  y: groundY - 124,
+  y: groundY - 248, // alineado con el suelo
   width: 248,
   height: 248,
   dy: 0,
@@ -105,7 +105,7 @@ function updatePlayer() {
     player.direction = 'left';
   }
 
-  player.dy += 1.2; // gravedad ajustada
+  player.dy += 1.2;
   player.y += player.dy;
 
   if (player.y + player.height >= groundY) {
@@ -220,4 +220,3 @@ function gameLoop() {
 
 setupLevel();
 gameLoop();
-
