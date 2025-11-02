@@ -2,18 +2,18 @@ const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const scoreDisplay = document.getElementById('score');
 const livesDisplay = document.getElementById('lives');
-const attackSound = document.getElementById('attack-sound');
-const coinSound = document.getElementById('coin-sound');
-const winSound = document.getElementById('win-sound');
 
 let keys = {};
 let paused = false;
-let debugMode = false;
-let groundY = canvas.height - 50;
+let preguntaActiva = false;
+let preguntas = [];
+let preguntasUsadas = [];
 let score = 0;
 let lives = 3;
+let groundY = canvas.height - 50;
 let lastSpawnX = 0;
 let nextCheckpoint = 1000;
+let checkpointGuardado = { x: 100, y: groundY - 248 };
 
 const player = {
   x: 100,
@@ -22,7 +22,6 @@ const player = {
   height: 248,
   dy: 0,
   grounded: true,
-  attack: false,
   direction: 'right',
   hitboxOffsetX: 80,
   hitboxOffsetY: 60,
@@ -30,53 +29,24 @@ const player = {
   hitboxHeight: 128
 };
 
-const playerRightImg = new Image();
-playerRightImg.src = 'player-right.png';
-const playerLeftImg = new Image();
-playerLeftImg.src = 'player-left.png';
-const enemyRightImg = new Image();
-enemyRightImg.src = 'enemy-right.png';
-const enemyLeftImg = new Image();
-enemyLeftImg.src = 'enemy-left.png';
+const blocks = [];
+const enemies = [];
+const coins = [];
+const checkpoints = [];
 
-let blocks = [], enemies = [], coins = [], checkpoints = [];
+fetch('preguntas.json')
+  .then(res => res.json())
+  .then(data => preguntas = data);
 
 document.getElementById('start-button').addEventListener('click', () => {
   document.getElementById('start-menu').style.display = 'none';
-
-  if (canvas.requestFullscreen) {
-    canvas.requestFullscreen();
-  } else if (canvas.webkitRequestFullscreen) {
-    canvas.webkitRequestFullscreen();
-  } else if (canvas.msRequestFullscreen) {
-    canvas.msRequestFullscreen();
-  }
-
+  canvas.requestFullscreen?.();
   generateWorldSegment();
   gameLoop();
 });
 
 document.addEventListener('keydown', e => keys[e.code] = true);
 document.addEventListener('keyup', e => keys[e.code] = false);
-
-document.addEventListener('keydown', e => {
-  if (e.code === 'Space' && player.grounded) {
-    player.dy = -28;
-    player.grounded = false;
-  }
-  if (e.code === 'KeyF') {
-    player.attack = true;
-    attackSound.play();
-    setTimeout(() => player.attack = false, 300);
-  }
-  if (e.code === 'KeyP') {
-    paused = !paused;
-  }
-  if (e.code === 'F5') {
-    e.preventDefault();
-    debugMode = !debugMode;
-  }
-});
 
 function detectCollision(a, b) {
   return a.x < b.x + b.width &&
@@ -85,65 +55,113 @@ function detectCollision(a, b) {
          a.y + a.height > b.y;
 }
 
+function mostrarPreguntaTestVisual(callback) {
+  preguntaActiva = true;
+  document.body.classList.add('pregunta-activa');
+
+  const disponibles = preguntas
+    .map((p, i) => ({ ...p, index: i }))
+    .filter(p => !preguntasUsadas.includes(p.index));
+
+  if (disponibles.length === 0) {
+    preguntaActiva = false;
+    document.body.classList.remove('pregunta-activa');
+    return callback(false);
+  }
+
+  const pregunta = disponibles[Math.floor(Math.random() * disponibles.length)];
+  preguntasUsadas.push(pregunta.index);
+
+  const box = document.getElementById('question-box');
+  const texto = document.getElementById('question-text');
+  const opciones = document.getElementById('question-options');
+  const overlay = document.getElementById('overlay-blocker');
+
+  texto.textContent = pregunta.pregunta;
+  opciones.innerHTML = '';
+  box.classList.remove('hidden');
+  overlay.style.display = 'block';
+
+  pregunta.opciones.forEach((opcion, i) => {
+    const btn = document.createElement('button');
+    btn.textContent = opcion;
+    btn.onclick = () => {
+      box.classList.add('hidden');
+      overlay.style.display = 'none';
+      document.body.classList.remove('pregunta-activa');
+      preguntaActiva = false;
+      callback(i === pregunta.respuesta);
+    };
+    opciones.appendChild(btn);
+  });
+}
+
 function generateWorldSegment() {
-  const segmentStart = lastSpawnX + 400;
-  const segmentEnd = segmentStart + 800;
+  const segmentStart = lastSpawnX;
+  const segmentEnd = segmentStart + 1000;
 
-  for (let i = segmentStart + 100; i < segmentEnd; i += 400) {
-    blocks.push({
-      x: i,
-      y: groundY - player.hitboxHeight,
-      width: 40,
-      height: player.hitboxHeight
-    });
+  // Suelo continuo
+  for (let i = segmentStart; i < segmentEnd; i += 100) {
+    blocks.push({ x: i, y: groundY, width: 100, height: 50 });
+  }
 
-    const platformX = i + 200;
-    const platformWidth = 200;
-    blocks.push({
-      x: platformX,
-      y: 160,
-      width: platformWidth,
-      height: 40
-    });
+  // Muro inicial
+  if (segmentStart === 0) {
+    blocks.push({ x: -100, y: groundY - 200, width: 100, height: 200 });
+  }
 
+  // Obstáculos verticales y plataformas
+  for (let i = segmentStart + 200; i < segmentEnd; i += 400) {
+    blocks.push({ x: i, y: groundY - 88, width: 40, height: 88 }); // vertical
+
+    const platformY = groundY - 200;
+    blocks.push({ x: i + 100, y: platformY, width: 200, height: 40 }); // aérea
+
+    // Enemigo sobre plataforma
     enemies.push({
-      x: platformX + 20,
-      y: 160 - 248,
+      x: i + 120,
+      y: platformY - 248,
       width: 248,
       height: 248,
       hitboxOffsetX: 80,
       hitboxOffsetY: 60,
       hitboxWidth: 88,
       hitboxHeight: 128,
-      hp: 1,
       dx: 2,
       active: true,
-      patrolMin: platformX,
-      patrolMax: platformX + platformWidth - 248
+      patrolMin: i + 100,
+      patrolMax: i + 300 - 248
+    });
+
+    // Moneda sobre plataforma
+    coins.push({ x: i + 180, y: platformY - 40, width: 40, height: 40 });
+  }
+
+  // Enemigos en el suelo
+  for (let i = segmentStart + 300; i < segmentEnd; i += 500) {
+    enemies.push({
+      x: i,
+      y: groundY - 248,
+      width: 248,
+      height: 248,
+      hitboxOffsetX: 80,
+      hitboxOffsetY: 60,
+      hitboxWidth: 88,
+      hitboxHeight: 128,
+      dx: Math.random() < 0.5 ? -2 : 2,
+      active: true
     });
   }
 
-  const floatingX = segmentStart + 300;
-  const floatingY = 120;
-  blocks.push({
-    x: floatingX,
-    y: floatingY,
-    width: 160,
-    height: 40,
-    floating: true,
-    dx: 2,
-    range: { min: floatingX - 100, max: floatingX + 100 }
-  });
-
+  // Checkpoint
   if (segmentEnd >= nextCheckpoint) {
     checkpoints.push({
-      x: segmentEnd,
-      y: groundY - 60,
-      width: 60,
-      height: 60,
-      question: "¿Cuál es la capital de España?",
-      answer: "Madrid",
-      triggered: false
+      x: segmentEnd - 100,
+      y: groundY - 40,
+      width: 40,
+      height: 40,
+      triggered: false,
+      guardado: false
     });
     nextCheckpoint += 2000;
   }
@@ -163,13 +181,20 @@ function updatePlayer() {
   player.dy += 1.2;
   player.y += player.dy;
 
-  // Colisión con el suelo
+  // Suelo
   if (player.y + player.height >= groundY) {
     player.y = groundY - player.height;
     player.dy = 0;
     player.grounded = true;
   }
 
+  // Saltar
+  if (keys['Space'] && player.grounded) {
+    player.dy = -28;
+    player.grounded = false;
+  }
+
+  // Colisiones con bloques
   blocks.forEach(block => {
     const hitbox = {
       x: player.x + player.hitboxOffsetX,
@@ -178,7 +203,7 @@ function updatePlayer() {
       height: player.hitboxHeight
     };
 
-    // Colisión desde abajo (saltando)
+    // Desde abajo
     if (
       player.dy < 0 &&
       hitbox.y <= block.y + block.height &&
@@ -190,7 +215,7 @@ function updatePlayer() {
       player.y = block.y + block.height - player.hitboxOffsetY;
     }
 
-    // Colisión desde arriba (cayendo)
+    // Desde arriba
     if (
       player.dy >= 0 &&
       hitbox.y + hitbox.height >= block.y &&
@@ -204,30 +229,19 @@ function updatePlayer() {
     }
   });
 
+  // Generar nuevo segmento si se acerca al final
   if (player.x + canvas.width > lastSpawnX - 400) {
     generateWorldSegment();
   }
-}
-
-function updateBlocks() {
-  blocks.forEach(block => {
-    if (block.floating) {
-      block.x += block.dx;
-      if (block.x < block.range.min || block.x > block.range.max) {
-        block.dx *= -1;
-      }
-    }
-  });
 }
 
 function updateEnemies() {
   enemies.forEach(en => {
     if (!en.active) return;
 
-    const progressFactor = Math.floor(player.x / 1000);
-    const speed = 2 + progressFactor * 0.5;
-    en.x += en.dx >= 0 ? speed : -speed;
+    en.x += en.dx;
 
+    // Patrulla en plataforma
     if (en.patrolMin !== undefined && en.patrolMax !== undefined) {
       if (en.x < en.patrolMin || en.x > en.patrolMax) {
         en.dx *= -1;
@@ -235,6 +249,22 @@ function updateEnemies() {
       }
     }
 
+    // Colisión con obstáculos verticales
+    blocks.forEach(block => {
+      if (block.width === 40) {
+        const enemyHitbox = {
+          x: en.x + en.hitboxOffsetX,
+          y: en.y + en.hitboxOffsetY,
+          width: en.hitboxWidth,
+          height: en.hitboxHeight
+        };
+        if (detectCollision(enemyHitbox, block)) {
+          en.dx *= -1;
+        }
+      }
+    });
+
+    // Colisión con jugador
     const playerHitbox = {
       x: player.x + player.hitboxOffsetX,
       y: player.y + player.hitboxOffsetY,
@@ -252,28 +282,45 @@ function updateEnemies() {
     if (detectCollision(playerHitbox, enemyHitbox)) {
       lives--;
       livesDisplay.textContent = lives;
+
       if (lives <= 0) {
-        alert('¡Has perdido!');
-        location.reload();
+        mostrarPreguntaTestVisual(correcta => {
+          if (correcta) {
+            alert("¡Correcto! Has ganado una vida extra.");
+            lives = 1;
+            livesDisplay.textContent = lives;
+            player.x = 100;
+            player.y = groundY - player.height;
+          } else {
+            alert("Has perdido. Recarga la página para intentarlo de nuevo.");
+          }
+        });
       } else {
-        player.x = 100;
-        player.y = groundY - player.height;
+        if (checkpointGuardado) {
+          player.x = checkpointGuardado.x;
+          player.y = checkpointGuardado.y;
+        } else {
+          player.x = 100;
+          player.y = groundY - player.height;
+        }
       }
     }
   });
-
-  enemies = enemies.filter(en => en.hp > 0);
 }
 
 function updateCoins() {
-  coins = coins.filter(coin => {
-    if (detectCollision(player, coin)) {
+  coins.forEach((coin, i) => {
+    const hitbox = {
+      x: player.x + player.hitboxOffsetX,
+      y: player.y + player.hitboxOffsetY,
+      width: player.hitboxWidth,
+      height: player.hitboxHeight
+    };
+    if (detectCollision(hitbox, coin)) {
       score += 5;
       scoreDisplay.textContent = score;
-      coinSound.play();
-      return false;
+      coins.splice(i, 1);
     }
-    return true;
   });
 }
 
@@ -281,12 +328,15 @@ function checkCheckpoints() {
   checkpoints.forEach(cp => {
     if (!cp.triggered && detectCollision(player, cp)) {
       cp.triggered = true;
-      const respuesta = prompt(cp.question);
-      if (respuesta && respuesta.toLowerCase() === cp.answer.toLowerCase()) {
-        alert("¡Progreso guardado!");
-      } else {
-        alert("Respuesta incorrecta.");
-      }
+      mostrarPreguntaTestVisual(correcta => {
+        if (correcta) {
+          alert("¡Progreso guardado!");
+          cp.guardado = true;
+          checkpointGuardado = { x: cp.x, y: cp.y };
+        } else {
+          alert("Respuesta incorrecta. Puedes seguir jugando, pero no se guardará tu progreso.");
+        }
+      });
     }
   });
 }
@@ -296,67 +346,27 @@ function draw() {
   ctx.save();
   ctx.translate(-player.x + canvas.width / 2, 0);
 
-  const img = player.direction === 'right' ? playerRightImg : playerLeftImg;
-  ctx.drawImage(img, player.x, player.y, player.width, player.height);
-
   ctx.fillStyle = 'gray';
   blocks.forEach(b => ctx.fillRect(b.x, b.y, b.width, b.height));
 
   ctx.fillStyle = 'gold';
   coins.forEach(c => ctx.fillRect(c.x, c.y, c.width, c.height));
 
-  enemies.forEach(e => {
-    const img = e.dx >= 0 ? enemyRightImg : enemyLeftImg;
-    ctx.drawImage(img, e.x, e.y, e.width, e.height);
-  });
-
   ctx.fillStyle = 'purple';
-  checkpoints.forEach(cp => {
-    ctx.fillRect(cp.x, cp.y, cp.width, cp.height);
-  });
+  checkpoints.forEach(cp => ctx.fillRect(cp.x, cp.y, cp.width, cp.height));
 
-  if (debugMode) {
-    ctx.strokeStyle = 'red';
-    ctx.strokeRect(
-      player.x + player.hitboxOffsetX,
-      player.y + player.hitboxOffsetY,
-      player.hitboxWidth,
-      player.hitboxHeight
-    );
+  ctx.fillStyle = 'red';
+  enemies.forEach(e => ctx.fillRect(e.x, e.y, e.width, e.height));
 
-    ctx.strokeStyle = 'green';
-    enemies.forEach(e => {
-      ctx.strokeRect(
-        e.x + e.hitboxOffsetX,
-        e.y + e.hitboxOffsetY,
-        e.hitboxWidth,
-        e.hitboxHeight
-      );
-    });
-
-    ctx.strokeStyle = 'gray';
-    blocks.forEach(b => {
-      ctx.strokeRect(b.x, b.y, b.width, b.height);
-    });
-
-    ctx.strokeStyle = 'gold';
-    coins.forEach(c => {
-      ctx.strokeRect(c.x, c.y, c.width, c.height);
-    });
-
-    ctx.strokeStyle = 'purple';
-    checkpoints.forEach(cp => {
-      ctx.strokeRect(cp.x, cp.y, cp.width, cp.height);
-    });
-  }
+  ctx.fillStyle = 'cyan';
+  ctx.fillRect(player.x, player.y, player.width, player.height);
 
   ctx.restore();
 }
 
 function gameLoop() {
-  if (!paused) {
+  if (!paused && !preguntaActiva) {
     updatePlayer();
-    updateBlocks();
     updateEnemies();
     updateCoins();
     checkCheckpoints();
