@@ -57,13 +57,10 @@ body {
   width: 500px;
   text-align: center;
   box-shadow: 0 0 20px #00ffcc;
-  transition: opacity 0.3s ease;
-  opacity: 1;
 }
 
 #question-box.hidden {
-  opacity: 0;
-  pointer-events: none;
+  display: none;
 }
 
 #question-options button {
@@ -88,14 +85,4 @@ body {
   background: rgba(0, 0, 0, 0.6);
   z-index: 9998;
   display: none;
-}
-
-body.pregunta-activa #game {
-  filter: blur(4px) brightness(0.7);
-  transition: filter 0.3s ease;
-}
-
-body.pregunta-activa #hud {
-  opacity: 0.3;
-  transition: opacity 0.3s ease;
 }
