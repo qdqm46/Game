@@ -15,7 +15,7 @@ let lives = 3;
 
 const player = {
   x: 100,
-  y: groundY - 248,
+  y: groundY - 124,
   width: 248,
   height: 248,
   dy: 0,
@@ -220,3 +220,4 @@ function gameLoop() {
 
 setupLevel();
 gameLoop();
+
