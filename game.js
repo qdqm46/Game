@@ -43,7 +43,7 @@ document.addEventListener('keyup', e => keys[e.code] = false);
 
 document.addEventListener('keydown', e => {
   if (e.code === 'Space' && player.grounded) {
-    player.dy = -20;
+    player.dy = -28; // salto más potente
     player.grounded = false;
   }
   if (e.code === 'KeyF') {
@@ -77,8 +77,8 @@ function setupLevel() {
   player.y = groundY - player.height;
 
   for (let i = 400; i < levelWidth - 400; i += 400) {
-    blocks.push({ x: i, y: 300, width: 50, height: 20 });
-    coins.push({ x: i + 100, y: 250, width: 20, height: 20 });
+    blocks.push({ x: i, y: 200, width: 200, height: 40 });
+    coins.push({ x: i + 100, y: 140, width: 60, height: 60 });
   }
 
   for (let i = 800; i < levelWidth - 800; i += 800) {
@@ -92,7 +92,7 @@ function setupLevel() {
     });
   }
 
-  goal = { x: levelWidth - 200, y: groundY - 248, width: 248, height: 248 };
+  goal = { x: levelWidth - 300, y: groundY - 248, width: 248, height: 248 };
 }
 
 function updatePlayer() {
@@ -105,7 +105,7 @@ function updatePlayer() {
     player.direction = 'left';
   }
 
-  player.dy += 0.6;
+  player.dy += 1.2; // gravedad ajustada
   player.y += player.dy;
 
   if (player.y + player.height >= groundY) {
