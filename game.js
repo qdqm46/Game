@@ -185,4 +185,6 @@ function checkVictory() {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.save();
-  ctx.translate(-player.x +
+  ctx.translate(-player.x + canvas.width / 2, 0);
+
+  const playerImg = player.direction === 'right' ? playerRightImg : playerLeftImg;
