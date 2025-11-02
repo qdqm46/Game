@@ -1,0 +1,27 @@
+[
+  {
+    "pregunta": "¿Cuál es la capital de Francia?",
+    "opciones": ["Madrid", "París", "Roma", "Berlín"],
+    "respuesta": 1
+  },
+  {
+    "pregunta": "¿Qué lenguaje se usa para estructurar páginas web?",
+    "opciones": ["Python", "HTML", "C++", "Java"],
+    "respuesta": 1
+  },
+  {
+    "pregunta": "¿Cuál es el planeta más cercano al Sol?",
+    "opciones": ["Venus", "Tierra", "Mercurio", "Marte"],
+    "respuesta": 2
+  },
+  {
+    "pregunta": "¿Cuántos lados tiene un hexágono?",
+    "opciones": ["5", "6", "7", "8"],
+    "respuesta": 1
+  },
+  {
+    "pregunta": "¿Quién escribió 'Don Quijote de la Mancha'?",
+    "opciones": ["Gabriel García Márquez", "Miguel de Cervantes", "Pablo Neruda", "Federico García Lorca"],
+    "respuesta": 1
+  }
+]
