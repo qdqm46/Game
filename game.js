@@ -15,13 +15,17 @@ let lives = 3;
 
 const player = {
   x: 100,
-  y: groundY - 248, // alineado con el suelo
+  y: groundY - 248,
   width: 248,
   height: 248,
   dy: 0,
   grounded: true,
   attack: false,
-  direction: 'right'
+  direction: 'right',
+  hitboxOffsetX: 40,
+  hitboxOffsetY: 40,
+  hitboxWidth: 168,
+  hitboxHeight: 208
 };
 
 const playerRightImg = new Image();
@@ -43,7 +47,7 @@ document.addEventListener('keyup', e => keys[e.code] = false);
 
 document.addEventListener('keydown', e => {
   if (e.code === 'Space' && player.grounded) {
-    player.dy = -28; // salto más potente
+    player.dy = -28;
     player.grounded = false;
   }
   if (e.code === 'KeyF') {
@@ -87,6 +91,10 @@ function setupLevel() {
       y: groundY - 248,
       width: 248,
       height: 248,
+      hitboxOffsetX: 40,
+      hitboxOffsetY: 40,
+      hitboxWidth: 168,
+      hitboxHeight: 208,
       hp: 1,
       dx: Math.random() < 0.5 ? -1 : 1
     });
@@ -139,13 +147,27 @@ function updateEnemies() {
     const dist = Math.abs(player.x - en.x);
     if (dist < 300) en.dx = player.x < en.x ? -2 : 2;
 
-    if (player.attack && detectCollision(player, en)) {
+    const playerHitbox = {
+      x: player.x + player.hitboxOffsetX,
+      y: player.y + player.hitboxOffsetY,
+      width: player.hitboxWidth,
+      height: player.hitboxHeight
+    };
+
+    const enemyHitbox = {
+      x: en.x + en.hitboxOffsetX,
+      y: en.y + en.hitboxOffsetY,
+      width: en.hitboxWidth,
+      height: en.hitboxHeight
+    };
+
+    if (player.attack && detectCollision(playerHitbox, enemyHitbox)) {
       en.hp = 0;
       score += 10;
       scoreDisplay.textContent = score;
     }
 
-    if (detectCollision(player, en) && !player.attack) {
+    if (!player.attack && detectCollision(playerHitbox, enemyHitbox)) {
       lives--;
       livesDisplay.textContent = lives;
       if (lives <= 0) {
