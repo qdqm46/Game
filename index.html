@@ -18,10 +18,13 @@
 
   <canvas id="game" width="1280" height="720"></canvas>
 
-  <!-- Sonidos -->
-  <audio id="attack-sound" src="attack.mp3"></audio>
-  <audio id="coin-sound" src="coin.mp3"></audio>
-  <audio id="win-sound" src="win.mp3"></audio>
+  <div id="question-box" class="hidden">
+    <div id="question-text"></div>
+    <div id="question-options"></div>
+  </div>
+
+  <div id="overlay-blocker"></div>
+
+  <script src="game.js"></script>
 </body>
-<script src="game.js"></script>
 </html>
