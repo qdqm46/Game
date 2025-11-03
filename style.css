@@ -78,3 +78,13 @@ canvas {
   background-color: #87ceeb;
   border-top: 4px solid #3498db;
 }
+canvas {
+  width: 100%;
+  height: auto;
+  max-width: 1280px;
+  display: block;
+  margin: 0 auto;
+  background-color: #87ceeb;
+  border-top: 4px solid #3498db;
+}
+
