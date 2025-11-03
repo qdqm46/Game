@@ -82,3 +82,45 @@ body {
 .game-over-box button:hover {
   background: #0088cc;
 }
+
+#pause-menu .pause-box {
+  text-align: center;
+  background: rgba(30, 30, 30, 0.95);
+  padding: 40px;
+  border-radius: 20px;
+  box-shadow: 0 0 30px #00aaff;
+  color: white;
+  width: 400px;
+  max-width: 90%;
+}
+
+#pause-menu .pause-box h1 {
+  font-size: 32px;
+  margin-bottom: 20px;
+}
+
+#pause-menu .pause-box p {
+  font-size: 18px;
+  margin: 10px 0;
+}
+
+#pause-menu .pause-box ol {
+  text-align: left;
+  margin: 20px auto;
+  padding-left: 20px;
+}
+
+#pause-menu .pause-box button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  font-size: 16px;
+  background: #00aaff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+#pause-menu .pause-box button:hover {
+  background: #0088cc;
+}
