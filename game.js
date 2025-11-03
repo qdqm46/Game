@@ -93,6 +93,18 @@ function detectCollision(a, b) {
 function generateWorldSegment() {
   const segmentStart = lastSpawnX;
   const segmentEnd = segmentStart + 800;
+  
+for (let i = segmentStart + 200; i < segmentEnd; i += 400) {
+  if (Math.random() < 0.6) { // más frecuentes
+    const wallHeight = canvas.height * 0.8;
+    blocks.push({
+      x: i,
+      y: groundY - wallHeight,
+      width: 40,
+      height: wallHeight
+    });
+  }
+}
 
   // 🧱 Pared izquierda infinita
   if (segmentStart === 0) {
@@ -536,6 +548,7 @@ async function uploadLeaderboardToGitHub() {
     console.error('Error al conectar con GitHub:', error);
   }
 }
+
 
 
 
