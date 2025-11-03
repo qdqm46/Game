@@ -137,6 +137,17 @@ function generateWorldSegment() {
     }
   }
 
+  for (let i = segmentStart + 200; i < segmentEnd; i += 300) {
+  if (Math.random() < 0.7) { // alta frecuencia
+    const wallHeight = player.height * 2.5; // más alto que el jugador
+    blocks.push({
+      x: i,
+      y: groundY - wallHeight,
+      width: 40,
+      height: wallHeight
+    });
+  }
+}
   if (segmentEnd >= nextCheckpoint && questionBank.length > usedQuestions.size) {
     const available = questionBank.filter(q => !usedQuestions.has(q.question));
     if (available.length > 0) {
@@ -523,5 +534,6 @@ async function uploadLeaderboardToGitHub() {
     console.error('Error al conectar con GitHub:', error);
   }
 }
+
 
 
