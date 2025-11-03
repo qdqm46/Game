@@ -81,6 +81,71 @@ if (savedCheckpoint) {
   player.y = lastCheckpoint.y;
 }
 
+// 🔍 Colisión
+function detectCollision(a, b) {
+  return a.x < b.x + b.width &&
+         a.x + a.width > b.x &&
+         a.y < b.y + b.height &&
+         a.y + a.height > b.y;
+}
+
+// 🌍 Generar mundo
+function generateWorldSegment() {
+  const segmentStart = lastSpawnX;
+  const segmentEnd = segmentStart + 800;
+
+  for (let i = segmentStart; i < segmentEnd; i += 40) {
+    blocks.push({ x: i, y: groundY - 40, width: 40, height: 40 });
+  }
+
+  for (let i = segmentStart + 400; i < segmentEnd; i += 800) {
+    if (Math.random() < 0.3) {
+      const skyY = groundY - 600 - Math.floor(Math.random() * 200);
+      blocks.push({ x: i, y: skyY, width: 100, height: 40 });
+      coins.push({ x: i + 40, y: skyY - 40, width: 20, height: 20, value: 10 });
+    }
+  }
+
+  for (let i = segmentStart + 600; i < segmentEnd; i += 1200) {
+    if (Math.random() < 0.4) {
+      enemies.push({
+        x: i,
+        y: groundY - 248,
+        width: 248,
+        height: 248,
+        hitboxOffsetX: 80,
+        hitboxOffsetY: 60,
+        hitboxWidth: 88,
+        hitboxHeight: 128,
+        hp: 1,
+        dx: 1,
+        active: true
+      });
+    }
+  }
+
+  if (segmentEnd >= nextCheckpoint && questionBank.length > usedQuestions.size) {
+    const available = questionBank.filter(q => !usedQuestions.has(q.question));
+    if (available.length > 0) {
+      const q = available[Math.floor(Math.random() * available.length)];
+      usedQuestions.add(q.question);
+      checkpoints.push({
+        x: segmentEnd,
+        y: groundY - 60,
+        width: 60,
+        height: 60,
+        question: q.question,
+        answer: q.answer,
+        triggered: false,
+        value: 30
+      });
+      nextCheckpoint += 100000;
+    }
+  }
+
+  lastSpawnX = segmentEnd;
+}
+
 // ▶️ Iniciar juego
 document.getElementById('start-button').addEventListener('click', () => {
   document.getElementById('start-menu').style.display = 'none';
@@ -115,14 +180,62 @@ document.addEventListener('keydown', e => {
     debugMode = !debugMode;
   }
 });
+function updatePlayer() {
+  if (keys['ArrowRight']) {
+    player.x += 4;
+    player.direction = 'right';
+  }
+  if (keys['ArrowLeft']) {
+    player.x -= 4;
+    player.direction = 'left';
+  }
 
-// 🔍 Colisión
-function detectCollision(a, b) {
-  return a.x < b.x + b.width &&
-         a.x + a.width > b.x &&
-         a.y < b.y + b.height &&
-         a.y + a.height > b.y;
+  player.dy += 1.2;
+  player.y += player.dy;
+
+  if (player.y + player.height >= groundY) {
+    player.y = groundY - player.height;
+    player.dy = 0;
+    player.grounded = true;
+  }
+
+  blocks.forEach(block => {
+    const hitbox = {
+      x: player.x + player.hitboxOffsetX,
+      y: player.y + player.hitboxOffsetY,
+      width: player.hitboxWidth,
+      height: player.hitboxHeight
+    };
+
+    if (
+      player.dy < 0 &&
+      hitbox.y <= block.y + block.height &&
+      hitbox.y + hitbox.height > block.y + block.height &&
+      hitbox.x < block.x + block.width &&
+      hitbox.x + hitbox.width > block.x
+    ) {
+      player.dy = 0;
+      player.y = block.y + block.height - player.hitboxOffsetY;
+    }
+
+    if (
+      player.dy >= 0 &&
+      hitbox.y + hitbox.height >= block.y &&
+      hitbox.y < block.y &&
+      hitbox.x < block.x + block.width &&
+      hitbox.x + hitbox.width > block.x
+    ) {
+      player.y = block.y - player.hitboxOffsetY - player.hitboxHeight;
+      player.dy = 0;
+      player.grounded = true;
+    }
+  });
+
+  if (player.x + canvas.width > lastSpawnX - 400) {
+    generateWorldSegment();
+  }
 }
+
 function updateEnemies() {
   enemies.forEach(en => {
     if (!en.active || dying) return;
@@ -290,7 +403,7 @@ function submitScore() {
 
   localStorage.setItem('leaderboard', JSON.stringify(top10));
   renderLeaderboard();
-  uploadLeaderboardToGitHub(); // ← Subida directa a GitHub
+  uploadLeaderboardToGitHub();
 }
 
 function renderLeaderboard() {
@@ -309,7 +422,29 @@ function restartGame() {
   location.reload();
 }
 
-// 🔄 Leer clasificación desde GitHub
+function openPauseMenu() {
+  document.getElementById('pause-score').textContent = score;
+  document.getElementById('pause-coins').textContent = Math.floor(score / 10);
+  document.getElementById('pause-distance').textContent = Math.floor(player.x);
+
+  const list = document.getElementById('pause-leaderboard');
+  list.innerHTML = '';
+  const leaderboard = JSON.parse(localStorage.getItem('leaderboard') || '[]');
+  leaderboard.forEach(entry => {
+    const li = document.createElement('li');
+    li.textContent = `${entry.name} — ${entry.score} pts`;
+    list.appendChild(li);
+  });
+
+  document.getElementById('pause-menu').style.display = 'flex';
+  paused = true;
+}
+
+function closePauseMenu() {
+  document.getElementById('pause-menu').style.display = 'none';
+  paused = false;
+}
+
 async function fetchLeaderboardFromGitHub() {
   const owner = 'qdqm46';
   const repo = 'Game';
@@ -319,7 +454,7 @@ async function fetchLeaderboardFromGitHub() {
     const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/${filePath}`);
     if (!res.ok) throw new Error('No se pudo cargar la clasificación');
     const data = await res.json();
-    localStorage.setItem('leaderboard', JSON.stringify(data));
+        localStorage.setItem('leaderboard', JSON.stringify(data));
     renderLeaderboard();
   } catch (error) {
     console.error('Error al cargar la clasificación desde GitHub:', error);
@@ -369,29 +504,3 @@ async function uploadLeaderboardToGitHub() {
     console.error('Error al conectar con GitHub:', error);
   }
 }
-
-// 🎮 Menú de pausa elegante
-function openPauseMenu() {
-  document.getElementById('pause-score').textContent = score;
-  document.getElementById('pause-coins').textContent = Math.floor(score / 10);
-  document.getElementById('pause-distance').textContent = Math.floor(player.x);
-
-  const list = document.getElementById('pause-leaderboard');
-  list.innerHTML = '';
-  const leaderboard = JSON.parse(localStorage.getItem('leaderboard') || '[]');
-  leaderboard.forEach(entry => {
-  const li = document.createElement('li');
-  li.textContent = `${entry.name} — ${entry.score} pts`;
-  list.appendChild(li);
-});
-
-
-  document.getElementById('pause-menu').style.display = 'flex';
-  paused = true;
-}
-
-function closePauseMenu() {
-  document.getElementById('pause-menu').style.display = 'none';
-  paused = false;
-}
-
