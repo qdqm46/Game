@@ -94,10 +94,19 @@ function generateWorldSegment() {
   const segmentStart = lastSpawnX;
   const segmentEnd = segmentStart + 800;
 
+  // 🧱 Pared izquierda infinita
+  if (segmentStart === 0) {
+    blocks.push({
+      x: 0,
+      y: 0,
+      width: 40,
+      height: canvas.height * 2 // altura infinita simulada
+    });
+  }
+
   for (let i = segmentStart; i < segmentEnd; i += 40) {
     blocks.push({ x: i, y: groundY - 40, width: 40, height: 40 });
   }
-
   for (let i = segmentStart + 400; i < segmentEnd; i += 800) {
     if (Math.random() < 0.3) {
       const skyY = groundY - 600 - Math.floor(Math.random() * 200);
@@ -504,3 +513,4 @@ async function uploadLeaderboardToGitHub() {
     console.error('Error al conectar con GitHub:', error);
   }
 }
+
