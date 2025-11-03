@@ -1,6 +1,243 @@
 [
-  { "question": "¿Cuál es la capital de España?", "answer": "Madrid" },
-  { "question": "¿Cuántos continentes hay en el mundo?", "answer": "7" },
-  { "question": "¿Qué planeta es conocido como el planeta rojo?", "answer": "Marte" },
-  { "question": "¿Quién escribió 'Don Quijote de la Mancha'?", "answer": "Cervantes" }
+  {
+    "question": "¿Cuál es la isla más grande del archipiélago canario?",
+    "options": ["Gran Canaria", "Tenerife", "Fuerteventura"],
+    "answer": [1],
+    "explanation": "Tenerife es la isla más extensa del archipiélago canario."
+  },
+  {
+    "question": "¿Qué isla es conocida como 'La Isla Bonita'?",
+    "options": ["La Palma", "El Hierro", "La Gomera"],
+    "answer": [0],
+    "explanation": "La Palma recibe ese apodo por su exuberante naturaleza."
+  },
+  {
+    "question": "¿Dónde se encuentra el Parque Nacional del Teide?",
+    "options": ["Gran Canaria", "Tenerife", "Lanzarote"],
+    "answer": [1],
+    "explanation": "El Teide está en Tenerife y es el pico más alto de España."
+  },
+  {
+    "question": "¿Cuál es la capital de Gran Canaria?",
+    "options": ["Santa Cruz", "Las Palmas", "Puerto del Rosario"],
+    "answer": [1],
+    "explanation": "Las Palmas de Gran Canaria es la capital de la isla."
+  },
+  {
+    "question": "¿Qué isla canaria está más cerca de África?",
+    "options": ["Fuerteventura", "La Palma", "El Hierro"],
+    "answer": [0],
+    "explanation": "Fuerteventura es la isla más oriental y cercana al continente africano."
+  },
+  {
+    "question": "¿En qué isla se encuentra el Parque Nacional de Garajonay?",
+    "options": ["La Gomera", "Tenerife", "Gran Canaria"],
+    "answer": [0],
+    "explanation": "Garajonay está en La Gomera y es Patrimonio de la Humanidad."
+  },
+  {
+    "question": "¿Qué isla es famosa por sus paisajes volcánicos y obras de César Manrique?",
+    "options": ["Lanzarote", "La Palma", "Fuerteventura"],
+    "answer": [0],
+    "explanation": "Lanzarote destaca por su paisaje volcánico y la influencia de Manrique."
+  },
+  {
+    "question": "¿Qué isla tiene el Roque Nublo como símbolo natural?",
+    "options": ["Gran Canaria", "Tenerife", "La Gomera"],
+    "answer": [0],
+    "explanation": "El Roque Nublo es un monumento natural emblemático de Gran Canaria."
+  },
+  {
+    "question": "¿Cuál es la isla más occidental del archipiélago?",
+    "options": ["La Palma", "El Hierro", "La Gomera"],
+    "answer": [1],
+    "explanation": "El Hierro es la isla más occidental y también la más joven geológicamente."
+  },
+  {
+    "question": "¿Qué isla tiene el aeropuerto César Manrique?",
+    "options": ["Lanzarote", "Tenerife", "La Palma"],
+    "answer": [0],
+    "explanation": "El aeropuerto de Lanzarote lleva el nombre del artista César Manrique."
+  }
+[
+  {
+    "question": "¿Qué isla canaria tiene el aeropuerto más pequeño?",
+    "options": ["El Hierro", "La Palma", "La Gomera"],
+    "answer": [0],
+    "explanation": "El aeropuerto de El Hierro es el más pequeño del archipiélago."
+  },
+  {
+    "question": "¿Cuál es la isla más joven geológicamente?",
+    "options": ["La Palma", "El Hierro", "Fuerteventura"],
+    "answer": [1],
+    "explanation": "El Hierro es la isla más reciente en formación geológica."
+  },
+  {
+    "question": "¿Qué isla es famosa por sus dunas de arena?",
+    "options": ["Gran Canaria", "Fuerteventura", "Lanzarote"],
+    "answer": [1],
+    "explanation": "Las dunas de Corralejo en Fuerteventura son muy conocidas."
+  },
+  {
+    "question": "¿Qué isla tiene el Parque Nacional de Timanfaya?",
+    "options": ["Lanzarote", "Tenerife", "Gran Canaria"],
+    "answer": [0],
+    "explanation": "Timanfaya está en Lanzarote y destaca por su paisaje volcánico."
+  },
+  {
+    "question": "¿Qué isla tiene el silbo gomero como patrimonio cultural?",
+    "options": ["La Gomera", "El Hierro", "La Palma"],
+    "answer": [0],
+    "explanation": "El silbo gomero es una forma de comunicación única de La Gomera."
+  },
+  {
+    "question": "¿Cuál es la isla menos poblada del archipiélago?",
+    "options": ["La Graciosa", "El Hierro", "La Gomera"],
+    "answer": [0],
+    "explanation": "La Graciosa tiene la menor población entre las islas habitadas."
+  },
+  {
+    "question": "¿Qué isla tiene el pico más alto de España?",
+    "options": ["Gran Canaria", "Tenerife", "La Palma"],
+    "answer": [1],
+    "explanation": "El Teide, en Tenerife, es el pico más alto de España."
+  },
+  {
+    "question": "¿Qué isla es conocida por sus vinos malvasía?",
+    "options": ["Lanzarote", "La Palma", "Tenerife"],
+    "answer": [0],
+    "explanation": "Lanzarote produce vinos malvasía en su tierra volcánica."
+  },
+  {
+    "question": "¿Qué isla tiene el bosque de Laurisilva?",
+    "options": ["La Gomera", "Fuerteventura", "Gran Canaria"],
+    "answer": [0],
+    "explanation": "La Laurisilva se encuentra en el Parque Nacional de Garajonay en La Gomera."
+  },
+  {
+    "question": "¿Qué isla tiene el municipio de Teguise?",
+    "options": ["Lanzarote", "Gran Canaria", "La Palma"],
+    "answer": [0],
+    "explanation": "Teguise es uno de los municipios más antiguos de Lanzarote."
+  },
+  {
+    "question": "¿Qué isla tiene el municipio de Agaete?",
+    "options": ["Gran Canaria", "Tenerife", "La Gomera"],
+    "answer": [0],
+    "explanation": "Agaete está en el noroeste de Gran Canaria."
+  },
+  {
+    "question": "¿Qué isla tiene el municipio de Los Llanos de Aridane?",
+    "options": ["La Palma", "El Hierro", "Tenerife"],
+    "answer": [0],
+    "explanation": "Los Llanos de Aridane es uno de los municipios más poblados de La Palma."
+  },
+  {
+    "question": "¿Qué isla tiene el municipio de San Sebastián?",
+    "options": ["La Gomera", "Gran Canaria", "Lanzarote"],
+    "answer": [0],
+    "explanation": "San Sebastián es la capital de La Gomera."
+  },
+  {
+    "question": "¿Qué isla tiene el municipio de Puerto del Rosario?",
+    "options": ["Fuerteventura", "Tenerife", "La Palma"],
+    "answer": [0],
+    "explanation": "Puerto del Rosario es la capital de Fuerteventura."
+  },
+  {
+    "question": "¿Qué isla tiene el municipio de Arrecife?",
+    "options": ["Lanzarote", "Gran Canaria", "La Gomera"],
+    "answer": [0],
+    "explanation": "Arrecife es la capital de Lanzarote."
+  },
+  {
+    "question": "¿Qué isla tiene el municipio de Santa Cruz de La Palma?",
+    "options": ["La Palma", "Tenerife", "El Hierro"],
+    "answer": [0],
+    "explanation": "Santa Cruz de La Palma es la capital de la isla de La Palma."
+  },
+  {
+    "question": "¿Qué isla tiene el municipio de Valverde?",
+    "options": ["El Hierro", "La Palma", "La Gomera"],
+    "answer": [0],
+    "explanation": "Valverde es la capital de El Hierro."
+  },
+  {
+    "question": "¿Qué isla tiene el municipio de San Bartolomé de Tirajana?",
+    "options": ["Gran Canaria", "Tenerife", "Lanzarote"],
+    "answer": [0],
+    "explanation": "San Bartolomé de Tirajana es uno de los municipios turísticos de Gran Canaria."
+  },
+  {
+    "question": "¿Qué isla tiene el municipio de Adeje?",
+    "options": ["Tenerife", "La Palma", "Fuerteventura"],
+    "answer": [0],
+    "explanation": "Adeje es una zona turística en el sur de Tenerife."
+  },
+  {
+    "question": "¿Qué isla tiene el municipio de Yaiza?",
+    "options": ["Lanzarote", "Gran Canaria", "La Gomera"],
+    "answer": [0],
+    "explanation": "Yaiza está en el sur de Lanzarote, cerca de Timanfaya."
+  },
+  {
+    "question": "¿Qué isla tiene el municipio de Breña Alta?",
+    "options": ["La Palma", "El Hierro", "Tenerife"],
+    "answer": [0],
+    "explanation": "Breña Alta es un municipio en la isla de La Palma."
+  },
+  {
+    "question": "¿Qué isla tiene el municipio de Frontera?",
+    "options": ["El Hierro", "La Palma", "Gran Canaria"],
+    "answer": [0],
+    "explanation": "Frontera es un municipio en la isla de El Hierro."
+  },
+  {
+    "question": "¿Qué isla tiene el municipio de Haría?",
+    "options": ["Lanzarote", "Tenerife", "La Gomera"],
+    "answer": [0],
+    "explanation": "Haría está en el norte de Lanzarote."
+  },
+  {
+    "question": "¿Qué isla tiene el municipio de Tazacorte?",
+    "options": ["La Palma", "El Hierro", "Gran Canaria"],
+    "answer": [0],
+    "explanation": "Tazacorte está en la costa oeste de La Palma."
+  },
+  {
+    "question": "¿Qué isla tiene el municipio de Tuineje?",
+    "options": ["Fuerteventura", "Tenerife", "La Palma"],
+    "answer": [0],
+    "explanation": "Tuineje es uno de los municipios históricos de Fuerteventura."
+  },
+  {
+    "question": "¿Qué isla tiene el municipio de Agulo?",
+    "options": ["La Gomera", "El Hierro", "Gran Canaria"],
+    "answer": [0],
+    "explanation": "Agulo es un pintoresco municipio en La Gomera."
+  },
+  {
+    "question": "¿Qué isla tiene el municipio de Tegueste?",
+    "options": ["Tenerife", "La Palma", "Lanzarote"],
+    "answer": [0],
+    "explanation": "Tegueste está en el norte de Tenerife."
+  },
+  {
+    "question": "¿Qué isla tiene el municipio de Tinajo?",
+    "options": ["Lanzarote", "Gran Canaria", "La Gomera"],
+    "answer": [0],
+    "explanation": "Tinajo está en el centro-oeste de Lanzarote."
+  },
+  {
+    "question": "¿Qué isla tiene el municipio de Puntagorda?",
+    "options": ["La Palma", "El Hierro", "Tenerife"],
+    "answer": [0],
+    "explanation": "Puntagorda está en el noroeste de La Palma."
+  },
+  {
+    "question": "¿Qué isla tiene el municipio de Betancuria?",
+    "options": ["Fuerteventura", "La Palma", "Gran Canaria"],
+    "answer": [0],
+    "explanation": "Betancuria fue la primera capital de Fuerteventura."
+  },
 ]
