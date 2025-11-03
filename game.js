@@ -198,7 +198,9 @@ function updatePlayer() {
     player.x -= 4;
     player.direction = 'left';
   }
-
+  if (player.x < 40) {
+    player.x = 40;
+  }
   player.dy += 1.2;
   player.y += player.dy;
 
@@ -255,6 +257,12 @@ function updateEnemies() {
     if (distance < 300) {
       en.dx = player.x > en.x ? 1 : -1;
     }
+en.x += en.dx * speed;
+
+// 🚫 Bloqueo contra la pared izquierda
+if (en.x < 40) {
+  en.x = 40;
+}
 
     const nextX = en.x + (en.dx > 0 ? en.width : -5);
     const nextY = en.y + en.height - 5;
@@ -363,6 +371,15 @@ function draw() {
 
   ctx.fillStyle = 'gray';
   blocks.forEach(b => ctx.fillRect(b.x, b.y, b.width, b.height));
+  ctx.fillStyle = 'darkred'; // pared izquierda
+blocks.forEach(b => {
+  if (b.x === 0) {
+    ctx.fillStyle = 'darkred';
+  } else {
+    ctx.fillStyle = 'gray';
+  }
+  ctx.fillRect(b.x, b.y, b.width, b.height);
+});
 
   ctx.fillStyle = 'gold';
   coins.forEach(c => ctx.fillRect(c.x, c.y, c.width, c.height));
@@ -513,4 +530,5 @@ async function uploadLeaderboardToGitHub() {
     console.error('Error al conectar con GitHub:', error);
   }
 }
+
 
