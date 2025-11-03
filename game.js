@@ -1,4 +1,4 @@
-// 🎮 Elementos principales del juego
+// 🎮 Elementos principales
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const scoreDisplay = document.getElementById('score');
@@ -30,7 +30,7 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-// 🧍 Configuración del jugador
+// 🧍 Jugador
 const player = {
   x: lastCheckpoint.x,
   y: lastCheckpoint.y,
@@ -46,7 +46,7 @@ const player = {
   hitboxHeight: 128
 };
 
-// 🖼️ Carga de imágenes
+// 🖼️ Imágenes
 const playerRightImg = new Image();
 playerRightImg.src = 'assets/player-right.png';
 const playerLeftImg = new Image();
@@ -56,13 +56,13 @@ enemyRightImg.src = 'assets/enemy-right.png';
 const enemyLeftImg = new Image();
 enemyLeftImg.src = 'assets/enemy-left.png';
 
-// 🧱 Elementos del mundo
+// 🧱 Mundo
 let blocks = [];
 let enemies = [];
 let coins = [];
 let checkpoints = [];
 
-// ❓ Banco de preguntas
+// ❓ Preguntas
 let questionBank = [];
 let usedQuestions = new Set();
 
@@ -73,7 +73,7 @@ fetch('questions.json')
     questionBank = data;
   });
 
-// 🧠 Cargar progreso guardado
+// 🧠 Cargar progreso
 const savedCheckpoint = localStorage.getItem('lastCheckpoint');
 if (savedCheckpoint) {
   lastCheckpoint = JSON.parse(savedCheckpoint);
@@ -81,7 +81,7 @@ if (savedCheckpoint) {
   player.y = lastCheckpoint.y;
 }
 
-// ▶️ Botón de inicio
+// ▶️ Iniciar juego
 document.getElementById('start-button').addEventListener('click', () => {
   document.getElementById('start-menu').style.display = 'none';
   fetchLeaderboardFromGitHub();
@@ -89,11 +89,11 @@ document.getElementById('start-button').addEventListener('click', () => {
   gameLoop();
 });
 
-// 🎹 Captura de teclas
+// 🎹 Teclas
 document.addEventListener('keydown', e => keys[e.code] = true);
 document.addEventListener('keyup', e => keys[e.code] = false);
 
-// 🕹️ Acciones del jugador
+// 🕹️ Acciones
 document.addEventListener('keydown', e => {
   if (e.code === 'Space' && player.grounded && !dying) {
     player.dy = -28;
@@ -110,23 +110,23 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// 🔍 Colisión entre objetos
+// 🔍 Colisión
 function detectCollision(a, b) {
   return a.x < b.x + b.width &&
          a.x + a.width > b.x &&
          a.y < b.y + b.height &&
          a.y + a.height > b.y;
 }
+
+// 🌍 Generar mundo
 function generateWorldSegment() {
   const segmentStart = lastSpawnX;
   const segmentEnd = segmentStart + 800;
 
-  // Suelo
   for (let i = segmentStart; i < segmentEnd; i += 40) {
     blocks.push({ x: i, y: groundY - 40, width: 40, height: 40 });
   }
 
-  // Obstáculos altos en el cielo
   for (let i = segmentStart + 400; i < segmentEnd; i += 800) {
     if (Math.random() < 0.3) {
       const skyY = groundY - 600 - Math.floor(Math.random() * 200);
@@ -135,7 +135,6 @@ function generateWorldSegment() {
     }
   }
 
-  // Enemigos en el suelo (muy separados)
   for (let i = segmentStart + 600; i < segmentEnd; i += 1200) {
     if (Math.random() < 0.4) {
       enemies.push({
@@ -154,7 +153,6 @@ function generateWorldSegment() {
     }
   }
 
-  // Checkpoints cada 100,000 píxeles
   if (segmentEnd >= nextCheckpoint && questionBank.length > usedQuestions.size) {
     const available = questionBank.filter(q => !usedQuestions.has(q.question));
     if (available.length > 0) {
@@ -177,6 +175,7 @@ function generateWorldSegment() {
   lastSpawnX = segmentEnd;
 }
 
+// 🧍 Actualizar jugador
 function updatePlayer() {
   if (keys['ArrowRight']) {
     player.x += 4;
@@ -233,6 +232,7 @@ function updatePlayer() {
   }
 }
 
+// 👾 Actualizar enemigos
 function updateEnemies() {
   enemies.forEach(en => {
     if (!en.active || dying) return;
@@ -270,7 +270,7 @@ function updateEnemies() {
       height: en.hitboxHeight
     };
 
-    if (detectCollision(playerHitbox, enemyHitbox) && !dying) {
+        if (detectCollision(playerHitbox, enemyHitbox) && !dying) {
       lives--;
       livesDisplay.textContent = lives;
       dying = true;
@@ -284,6 +284,125 @@ function updateEnemies() {
   enemies = enemies.filter(en => en.hp > 0);
 }
 
+function handleDeathAnimation() {
+  deathTimer++;
+  ctx.save();
+  ctx.translate(-player.x + canvas.width / 2, 0);
+  ctx.globalAlpha = Math.max(0, 1 - deathTimer / 60);
+  const img = player.direction === 'right' ? playerRightImg : playerLeftImg;
+  ctx.drawImage(img, player.x, player.y, player.width, player.height);
+  ctx.restore();
+
+  if (deathTimer >= 60) {
+    dying = false;
+    if (lives <= 0) {
+      showGameOver();
+    } else {
+      player.x = lastCheckpoint.x;
+      player.y = lastCheckpoint.y;
+      player.dy = 0;
+    }
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.translate(-player.x + canvas.width / 2, 0);
+
+  if (!dying) {
+    const img = player.direction === 'right' ? playerRightImg : playerLeftImg;
+    ctx.drawImage(img, player.x, player.y, player.width, player.height);
+  }
+
+  ctx.fillStyle = 'gray';
+  blocks.forEach(b => ctx.fillRect(b.x, b.y, b.width, b.height));
+
+  ctx.fillStyle = 'gold';
+  coins.forEach(c => ctx.fillRect(c.x, c.y, c.width, c.height));
+
+  enemies.forEach(e => {
+    const eImg = e.dx >= 0 ? enemyRightImg : enemyLeftImg;
+    ctx.drawImage(eImg, e.x, e.y, e.width, e.height);
+  });
+
+  ctx.fillStyle = 'purple';
+  checkpoints.forEach(cp => ctx.fillRect(cp.x, cp.y, cp.width, cp.height));
+
+  ctx.restore();
+}
+
+function gameLoop() {
+  if (!paused) {
+    if (dying) {
+      draw();
+      handleDeathAnimation();
+    } else {
+      updatePlayer();
+      updateEnemies();
+      updateCoins();
+      checkCheckpoints();
+      draw();
+    }
+  }
+  requestAnimationFrame(gameLoop);
+}
+
+// 🏁 Mostrar pantalla de Game Over
+function showGameOver() {
+  document.getElementById('final-score').textContent = score;
+  document.getElementById('game-over-screen').style.display = 'flex';
+  paused = true;
+  renderLeaderboard();
+}
+
+// 📝 Guardar puntuación local y actualizar tabla
+function submitScore() {
+  const name = document.getElementById('player-name').value.trim() || 'Jugador';
+  const leaderboard = JSON.parse(localStorage.getItem('leaderboard') || '[]');
+
+  leaderboard.push({ name, score });
+  leaderboard.sort((a, b) => b.score - a.score);
+  const top10 = leaderboard.slice(0, 10);
+
+  localStorage.setItem('leaderboard', JSON.stringify(top10));
+  renderLeaderboard();
+}
+
+// 🖼️ Mostrar tabla de clasificación
+function renderLeaderboard() {
+  const list = document.getElementById('leaderboard');
+  list.innerHTML = '';
+  const leaderboard = JSON.parse(localStorage.getItem('leaderboard') || '[]');
+  leaderboard.forEach(entry => {
+    const li = document.createElement('li');
+    li.textContent = `${entry.name} — ${entry.score} pts`;
+    list.appendChild(li);
+  });
+}
+
+// 🔁 Reiniciar juego
+function restartGame() {
+  localStorage.removeItem('lastCheckpoint');
+  location.reload();
+}
+
+// 🔄 Leer clasificación desde GitHub
+async function fetchLeaderboardFromGitHub() {
+  const owner = 'TU_USUARIO_DE_GITHUB'; // ← Reemplaza con tu usuario
+  const repo = 'TU_REPOSITORIO';        // ← Reemplaza con el nombre del repo
+  const filePath = 'leaderboard.json';
+
+  try {
+    const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/${filePath}`);
+    if (!res.ok) throw new Error('No se pudo cargar la clasificación');
+    const data = await res.json();
+    localStorage.setItem('leaderboard', JSON.stringify(data));
+    renderLeaderboard();
+  } catch (error) {
+    console.error('Error al cargar la clasificación desde GitHub:', error);
+  }
+}
 function updateCoins() {
   coins = coins.filter(coin => {
     if (detectCollision(player, coin)) {
@@ -318,64 +437,88 @@ function checkCheckpoints() {
   });
 }
 
-function handleDeathAnimation() {
-  deathTimer++;
-  ctx.save();
-  ctx.translate(-player.x + canvas.width / 2, 0);
-  ctx.globalAlpha = Math.max(0, 1 - deathTimer / 60);
-  const img = player.direction === 'right' ? playerRightImg : playerLeftImg;
-  ctx.drawImage(img, player.x, player.y, player.width, player.height);
-  ctx.restore();
-
-  if (deathTimer >= 60) {
-    dying = false;
-    if (lives <= 0) {
-      showGameOver();
-    } else {
-      player.x = lastCheckpoint.x;
-      player.y = lastCheckpoint.y;
-      player.dy = 0;
-    }
-  }
+// 🏁 Mostrar pantalla de Game Over
+function showGameOver() {
+  document.getElementById('final-score').textContent = score;
+  document.getElementById('game-over-screen').style.display = 'flex';
+  paused = true;
+  renderLeaderboard();
 }
 
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.save();
-  ctx.translate(-player.x + canvas.width / 2, 0);
+// 📝 Guardar puntuación local y actualizar tabla
+function submitScore() {
+  const name = document.getElementById('player-name').value.trim() || 'Jugador';
+  const leaderboard = JSON.parse(localStorage.getItem('leaderboard') || '[]');
 
-  const img = player.direction === 'right' ? playerRightImg : playerLeftImg;
-  if (!dying) ctx.drawImage(img, player.x, player.y, player.width, player.height);
+  leaderboard.push({ name, score });
+  leaderboard.sort((a, b) => b.score - a.score);
+  const top10 = leaderboard.slice(0, 10);
 
-  ctx.fillStyle = 'gray';
-  blocks.forEach(b => ctx.fillRect(b.x, b.y, b.width, b.height));
+  localStorage.setItem('leaderboard', JSON.stringify(top10));
+  renderLeaderboard();
+}
 
-  ctx.fillStyle = 'gold';
-  coins.forEach(c => ctx.fillRect(c.x, c.y, c.width, c.height));
-
-  enemies.forEach(e => {
-    const eImg = e.dx >= 0 ? enemyRightImg : enemyLeftImg;
-    ctx.drawImage(eImg, e.x, e.y, e.width, e.height);
+// 🖼️ Mostrar tabla de clasificación
+function renderLeaderboard() {
+  const list = document.getElementById('leaderboard');
+  list.innerHTML = '';
+  const leaderboard = JSON.parse(localStorage.getItem('leaderboard') || '[]');
+  leaderboard.forEach(entry => {
+    const li = document.createElement('li');
+    li.textContent = `${entry.name} — ${entry.score} pts`;
+    list.appendChild(li);
   });
-
-  ctx.fillStyle = 'purple';
-  checkpoints.forEach(cp => ctx.fillRect(cp.x, cp.y, cp.width, cp.height));
-
-  ctx.restore();
 }
 
-function gameLoop() {
-  if (!paused) {
-    if (dying) {
-      draw();
-      handleDeathAnimation();
+// 🔁 Reiniciar juego
+function restartGame() {
+  localStorage.removeItem('lastCheckpoint');
+  location.reload();
+}
+
+// 🔄 Leer clasificación desde GitHub
+async function fetchLeaderboardFromGitHub() {
+  const token = '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';
+const owner = 'qdqm46';
+const repo = 'Game';
+const filePath = 'leaderboard.json';
+
+async function uploadLeaderboardToGitHub() {
+  const leaderboard = JSON.parse(localStorage.getItem('leaderboard') || '[]');
+  const content = JSON.stringify(leaderboard, null, 2);
+
+  try {
+    // Obtener SHA actual del archivo
+    const getRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github.v3+json'
+      }
+    });
+
+    const fileData = await getRes.json();
+    const sha = fileData.sha;
+
+    // Subir nueva versión
+    const updateRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github.v3+json'
+      },
+      body: JSON.stringify({
+        message: 'Actualizar clasificación desde el juego',
+        content: btoa(unescape(encodeURIComponent(content))),
+        sha: sha
+      })
+    });
+
+    if (updateRes.ok) {
+      console.log('Clasificación actualizada en GitHub');
     } else {
-      updatePlayer();
-      updateEnemies();
-      updateCoins();
-      checkCheckpoints();
-      draw();
+      console.error('Error al subir la clasificación:', await updateRes.text());
     }
+  } catch (error) {
+    console.error('Error al conectar con GitHub:', error);
   }
-  requestAnimationFrame(gameLoop);
 }
