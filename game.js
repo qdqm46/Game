@@ -11,22 +11,26 @@ let debugMode = false;
 let score = 0;
 let lives = 3;
 let lastSpawnX = 0;
-let nextCheckpoint = 1000;
+let nextCheckpoint = 100000; // Checkpoints cada 100,000 píxeles
+let lastCheckpoint = { x: 50, y: 0 }; // Punto de reaparición
 
-// 📏 Altura dinámica del suelo según pantalla
+// 📏 Altura dinámica del suelo
 let groundY;
 function resizeCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
   groundY = canvas.height - 50;
+  if (lastCheckpoint.y === 0) {
+    lastCheckpoint.y = groundY - 248;
+  }
 }
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
 // 🧍 Configuración del jugador
 const player = {
-  x: 50,
-  y: groundY - 248,
+  x: lastCheckpoint.x,
+  y: lastCheckpoint.y,
   width: 248,
   height: 248,
   dy: 0,
@@ -59,12 +63,20 @@ let checkpoints = [];
 let questionBank = [];
 let usedQuestions = new Set();
 
-// 📦 Carga de preguntas
+// 📦 Cargar preguntas
 fetch('questions.json')
   .then(res => res.json())
   .then(data => {
     questionBank = data;
   });
+
+// 🧠 Cargar progreso guardado
+const savedCheckpoint = localStorage.getItem('lastCheckpoint');
+if (savedCheckpoint) {
+  lastCheckpoint = JSON.parse(savedCheckpoint);
+  player.x = lastCheckpoint.x;
+  player.y = lastCheckpoint.y;
+}
 
 // ▶️ Botón de inicio
 document.getElementById('start-button').addEventListener('click', () => {
@@ -101,8 +113,7 @@ function detectCollision(a, b) {
          a.y < b.y + b.height &&
          a.y + a.height > b.y;
 }
-
-// 🌍 Generación del mundo
+// 🌍 Generación del mundo con obstáculos, enemigos, monedas y checkpoints
 function generateWorldSegment() {
   const segmentStart = lastSpawnX;
   const segmentEnd = segmentStart + 800;
@@ -127,20 +138,47 @@ function generateWorldSegment() {
     });
   }
 
-  // 🧗 Obstáculos superiores (máximo 2 por segmento)
-  let upperObstacles = 0;
+  // 🧗 Obstáculos superiores escalonados
   const upperPlatforms = [];
-  for (let i = segmentStart + 200; i < segmentEnd; i += 400) {
-    if (Math.random() < 0.4 && upperObstacles < 2) {
+  for (let i = segmentStart + 200; i < segmentEnd; i += 200) {
+    for (let level = 1; level <= 3; level++) {
+      const y = groundY - (level * 160);
       const platform = {
-        x: i,
-        y: groundY - 200,
+        x: i + level * 40,
+        y: y,
         width: 100,
         height: 40
       };
       blocks.push(platform);
       upperPlatforms.push(platform);
-      upperObstacles++;
+
+      // 👾 Enemigo sobre algunos obstáculos
+      if (Math.random() < 0.3) {
+        enemies.push({
+          x: platform.x + 10,
+          y: platform.y - 248,
+          width: 248,
+          height: 248,
+          hitboxOffsetX: 80,
+          hitboxOffsetY: 60,
+          hitboxWidth: 88,
+          hitboxHeight: 128,
+          hp: 1,
+          dx: 2,
+          active: true,
+          patrolMin: platform.x,
+          patrolMax: platform.x + platform.width - 248
+        });
+      }
+
+      // 💰 Moneda sobre el obstáculo
+      coins.push({
+        x: platform.x + 40,
+        y: platform.y - 40,
+        width: 20,
+        height: 20,
+        value: 10
+      });
     }
   }
 
@@ -163,26 +201,7 @@ function generateWorldSegment() {
     });
   }
 
-  // 👾 Enemigos sobre plataformas superiores
-  upperPlatforms.forEach(platform => {
-    enemies.push({
-      x: platform.x + 10,
-      y: platform.y - 248,
-      width: 248,
-      height: 248,
-      hitboxOffsetX: 80,
-      hitboxOffsetY: 60,
-      hitboxWidth: 88,
-      hitboxHeight: 128,
-      hp: 1,
-      dx: 2,
-      active: true,
-      patrolMin: platform.x,
-      patrolMax: platform.x + platform.width - 248
-    });
-  });
-
-  // ❓ Checkpoints con preguntas
+  // ❓ Checkpoints cada 100,000 píxeles
   if (segmentEnd >= nextCheckpoint && questionBank.length > usedQuestions.size) {
     const availableQuestions = questionBank.filter(q => !usedQuestions.has(q.question));
     if (availableQuestions.length > 0) {
@@ -196,17 +215,54 @@ function generateWorldSegment() {
         height: 60,
         question: q.question,
         answer: q.answer,
-        triggered: false
+        triggered: false,
+        value: 30
       });
 
-      nextCheckpoint += 2000;
+      nextCheckpoint += 100000;
     }
   }
 
   lastSpawnX = segmentEnd;
 }
 
-// 🧍 Movimiento y colisiones del jugador
+// 💰 Monedas
+function updateCoins() {
+  coins = coins.filter(coin => {
+    if (detectCollision(player, coin)) {
+      score += coin.value || 10;
+      scoreDisplay.textContent = score;
+      return false;
+    }
+    return true;
+  });
+}
+
+// ❓ Checkpoints con guardado de progreso
+function checkCheckpoints() {
+  checkpoints.forEach(cp => {
+    if (!cp.triggered && detectCollision(player, cp)) {
+      cp.triggered = true;
+      const respuesta = prompt(cp.question);
+      if (respuesta && respuesta.toLowerCase() === cp.answer.toLowerCase()) {
+        alert("¡Progreso guardado!");
+        score += cp.value || 30;
+        scoreDisplay.textContent = score;
+
+        // 🧠 Guardar progreso
+        lastCheckpoint = {
+          x: cp.x,
+          y: cp.y - player.height
+        };
+        localStorage.setItem('lastCheckpoint', JSON.stringify(lastCheckpoint));
+      } else {
+        alert("Respuesta incorrecta.");
+      }
+    }
+  });
+}
+
+// 🧍 Actualización del jugador
 function updatePlayer() {
   if (keys['ArrowRight']) {
     player.x += 4;
@@ -263,7 +319,7 @@ function updatePlayer() {
   }
 }
 
-// 👾 Movimiento y colisiones de enemigos
+// 👾 Enemigos
 function updateEnemies() {
   enemies.forEach(en => {
     if (!en.active) return;
@@ -290,15 +346,17 @@ function updateEnemies() {
       height: en.hitboxHeight
     };
 
-        if (detectCollision(playerHitbox, enemyHitbox)) {
+    if (detectCollision(playerHitbox, enemyHitbox)) {
       lives--;
       livesDisplay.textContent = lives;
       if (lives <= 0) {
         alert('¡Has perdido!');
+        localStorage.removeItem('lastCheckpoint');
         location.reload();
       } else {
-        player.x = 50;
-        player.y = groundY - player.height;
+        player.x = lastCheckpoint.x;
+        player.y = lastCheckpoint.y;
+        player.dy = 0;
       }
     }
   });
@@ -306,40 +364,27 @@ function updateEnemies() {
   enemies = enemies.filter(en => en.hp > 0);
 }
 
-// ❓ Verifica si el jugador activa un checkpoint
-function checkCheckpoints() {
-  checkpoints.forEach(cp => {
-    if (!cp.triggered && detectCollision(player, cp)) {
-      cp.triggered = true;
-      const respuesta = prompt(cp.question);
-      if (respuesta && respuesta.toLowerCase() === cp.answer.toLowerCase()) {
-        alert("¡Progreso guardado!");
-      } else {
-        alert("Respuesta incorrecta.");
-      }
-    }
-  });
-}
-
-// 🖼️ Dibuja todos los elementos del juego
+// 🖼️ Dibujo del juego (continuación y cierre)
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.save();
-
-  // 📷 Cámara que sigue al jugador
   ctx.translate(-player.x + canvas.width / 2, 0);
 
-  // 🧍 Jugador
+  // Jugador
   const img = player.direction === 'right' ? playerRightImg : playerLeftImg;
   if (img.complete && img.naturalWidth !== 0) {
     ctx.drawImage(img, player.x, player.y, player.width, player.height);
   }
 
-  // 🧱 Bloques (suelo, obstáculos, muro)
+  // Bloques
   ctx.fillStyle = 'gray';
   blocks.forEach(b => ctx.fillRect(b.x, b.y, b.width, b.height));
 
-  // 👾 Enemigos
+  // Monedas
+  ctx.fillStyle = 'gold';
+  coins.forEach(c => ctx.fillRect(c.x, c.y, c.width, c.height));
+
+  // Enemigos
   enemies.forEach(e => {
     const eImg = e.dx >= 0 ? enemyRightImg : enemyLeftImg;
     if (eImg.complete && eImg.naturalWidth !== 0) {
@@ -347,11 +392,11 @@ function draw() {
     }
   });
 
-  // ❓ Checkpoints
+  // Checkpoints
   ctx.fillStyle = 'purple';
   checkpoints.forEach(cp => ctx.fillRect(cp.x, cp.y, cp.width, cp.height));
 
-  // 🐞 Modo debug
+  // Modo debug
   if (debugMode) {
     ctx.strokeStyle = 'red';
     ctx.strokeRect(
@@ -360,6 +405,7 @@ function draw() {
       player.hitboxWidth,
       player.hitboxHeight
     );
+
     enemies.forEach(e => {
       ctx.strokeStyle = 'green';
       ctx.strokeRect(
@@ -368,6 +414,16 @@ function draw() {
         e.hitboxWidth,
         e.hitboxHeight
       );
+    });
+
+    checkpoints.forEach(cp => {
+      ctx.strokeStyle = 'purple';
+      ctx.strokeRect(cp.x, cp.y, cp.width, cp.height);
+    });
+
+    coins.forEach(c => {
+      ctx.strokeStyle = 'orange';
+      ctx.strokeRect(c.x, c.y, c.width, c.height);
     });
   }
 
@@ -379,6 +435,7 @@ function gameLoop() {
   if (!paused) {
     updatePlayer();
     updateEnemies();
+    updateCoins();
     checkCheckpoints();
     draw();
   }
