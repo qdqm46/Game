@@ -1,8 +1,10 @@
+// 🎮 Elementos principales del juego
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const scoreDisplay = document.getElementById('score');
 const livesDisplay = document.getElementById('lives');
 
+// 🧠 Variables globales
 let keys = {};
 let paused = false;
 let debugMode = false;
@@ -11,6 +13,7 @@ let lives = 3;
 let lastSpawnX = 0;
 let nextCheckpoint = 1000;
 
+// 📏 Altura dinámica del suelo según pantalla
 let groundY;
 function resizeCanvas() {
   canvas.width = window.innerWidth;
@@ -18,8 +21,9 @@ function resizeCanvas() {
   groundY = canvas.height - 50;
 }
 window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
+resizeCanvas(); // Inicializa el canvas al cargar
 
+// 🧍 Configuración del jugador
 const player = {
   x: 100,
   y: groundY - 248,
@@ -35,6 +39,7 @@ const player = {
   hitboxHeight: 128
 };
 
+// 🖼️ Carga de imágenes
 const playerRightImg = new Image();
 playerRightImg.src = 'assets/player-right.png';
 const playerLeftImg = new Image();
@@ -43,71 +48,96 @@ const enemyRightImg = new Image();
 enemyRightImg.src = 'assets/enemy-right.png';
 const enemyLeftImg = new Image();
 enemyLeftImg.src = 'assets/enemy-left.png';
-const groundTexture = new Image();
-groundTexture.src = 'assets/ground-texture.png';
 
-let blocks = [];
-let enemies = [];
-let coins = [];
-let checkpoints = [];
+// 🧱 Elementos del mundo
+let blocks = [];       // Obstáculos y suelo
+let enemies = [];      // Enemigos
+let coins = [];        // Monedas (si se usan)
+let checkpoints = [];  // Preguntas interactivas
 
+// ❓ Banco de preguntas
 let questionBank = [];
 let usedQuestions = new Set();
 
+// 📦 Carga de preguntas desde archivo JSON
 fetch('questions.json')
   .then(res => res.json())
   .then(data => {
     questionBank = data;
   });
 
+// ▶️ Botón de inicio
 document.getElementById('start-button').addEventListener('click', () => {
   document.getElementById('start-menu').style.display = 'none';
-  generateWorldSegment();
-  gameLoop();
+  generateWorldSegment(); // Genera el primer segmento del mundo
+  gameLoop();             // Inicia el bucle del juego
 });
 
+// 🎹 Captura de teclas
 document.addEventListener('keydown', e => keys[e.code] = true);
 document.addEventListener('keyup', e => keys[e.code] = false);
 
+// 🕹️ Acciones especiales del jugador
 document.addEventListener('keydown', e => {
   if (e.code === 'Space' && player.grounded) {
-    player.dy = -28;
+    player.dy = -28; // Salto
     player.grounded = false;
   }
   if (e.code === 'KeyF') {
-    player.attack = true;
+    player.attack = true; // Ataque
     setTimeout(() => player.attack = false, 300);
   }
-  if (e.code === 'KeyP') paused = !paused;
+  if (e.code === 'KeyP') paused = !paused; // Pausa
   if (e.code === 'F5') {
     e.preventDefault();
-    debugMode = !debugMode;
+    debugMode = !debugMode; // Modo debug
   }
 });
 
+// 🔍 Detección de colisiones entre dos objetos
 function detectCollision(a, b) {
   return a.x < b.x + b.width &&
          a.x + a.width > b.x &&
          a.y < b.y + b.height &&
          a.y + a.height > b.y;
 }
-
+// 🧱 Generación del mundo: suelo, obstáculos y enemigos
 function generateWorldSegment() {
   const segmentStart = lastSpawnX + 400;
   const segmentEnd = segmentStart + 800;
 
-  for (let i = segmentStart + 100; i < segmentEnd; i += 400) {
-    blocks.push({ x: i, y: groundY - player.hitboxHeight, width: 40, height: player.hitboxHeight });
+  // 🧱 Suelo como bloques simples
+  for (let i = segmentStart; i < segmentEnd; i += 40) {
+    blocks.push({
+      x: i,
+      y: groundY - 40,
+      width: 40,
+      height: 40
+    });
+  }
 
-    const platformX = i + 200;
-    const platformWidth = 200;
-    const platformY = 160 + Math.floor(Math.random() * 100);
+  // 🧗 Obstáculos superiores (máximo 2 por segmento)
+  let upperObstacles = 0;
+  const upperPlatforms = [];
+  for (let i = segmentStart + 100; i < segmentEnd; i += 200) {
+    if (Math.random() < 0.5 && upperObstacles < 2) {
+      const platform = {
+        x: i,
+        y: groundY - 200,
+        width: 100,
+        height: 40
+      };
+      blocks.push(platform);
+      upperPlatforms.push(platform);
+      upperObstacles++;
+    }
+  }
 
-    blocks.push({ x: platformX, y: platformY, width: platformWidth, height: 40 });
-
+  // 👾 Enemigos sobre el suelo
+  for (let i = segmentStart + 150; i < segmentEnd; i += 400) {
     enemies.push({
-      x: platformX + 20,
-      y: platformY - 248,
+      x: i,
+      y: groundY - 248,
       width: 248,
       height: 248,
       hitboxOffsetX: 80,
@@ -117,21 +147,31 @@ function generateWorldSegment() {
       hp: 1,
       dx: 2,
       active: true,
-      patrolMin: platformX,
-      patrolMax: platformX + platformWidth - 248
+      patrolMin: i - 100,
+      patrolMax: i + 100
     });
   }
 
-  blocks.push({
-    x: segmentStart + 300,
-    y: 120,
-    width: 160,
-    height: 40,
-    floating: true,
-    dx: 2,
-    range: { min: segmentStart + 200, max: segmentStart + 400 }
+  // 👾 Enemigos sobre obstáculos superiores
+  upperPlatforms.forEach(platform => {
+    enemies.push({
+      x: platform.x + 10,
+      y: platform.y - 248,
+      width: 248,
+      height: 248,
+      hitboxOffsetX: 80,
+      hitboxOffsetY: 60,
+      hitboxWidth: 88,
+      hitboxHeight: 128,
+      hp: 1,
+      dx: 2,
+      active: true,
+      patrolMin: platform.x,
+      patrolMax: platform.x + platform.width - 248
+    });
   });
 
+  // ❓ Checkpoint con pregunta
   if (segmentEnd >= nextCheckpoint && questionBank.length > usedQuestions.size) {
     const availableQuestions = questionBank.filter(q => !usedQuestions.has(q.question));
     if (availableQuestions.length > 0) {
@@ -155,6 +195,7 @@ function generateWorldSegment() {
   lastSpawnX = segmentEnd;
 }
 
+// 🧍 Actualización del jugador
 function updatePlayer() {
   if (keys['ArrowRight']) {
     player.x += 4;
@@ -174,6 +215,7 @@ function updatePlayer() {
     player.grounded = true;
   }
 
+  // Colisiones con bloques
   blocks.forEach(block => {
     const hitbox = {
       x: player.x + player.hitboxOffsetX,
@@ -182,6 +224,7 @@ function updatePlayer() {
       height: player.hitboxHeight
     };
 
+    // Colisión superior
     if (
       player.dy < 0 &&
       hitbox.y <= block.y + block.height &&
@@ -193,6 +236,7 @@ function updatePlayer() {
       player.y = block.y + block.height - player.hitboxOffsetY;
     }
 
+    // Colisión inferior
     if (
       player.dy >= 0 &&
       hitbox.y + hitbox.height >= block.y &&
@@ -206,22 +250,13 @@ function updatePlayer() {
     }
   });
 
+  // Generar nuevo segmento si se acerca al borde
   if (player.x + canvas.width > lastSpawnX - 400) {
     generateWorldSegment();
   }
 }
 
-function updateBlocks() {
-  blocks.forEach(block => {
-    if (block.floating) {
-      block.x += block.dx;
-      if (block.x < block.range.min || block.x > block.range.max) {
-        block.dx *= -1;
-      }
-    }
-  });
-}
-
+// 🔁 Actualización de enemigos
 function updateEnemies() {
   enemies.forEach(en => {
     if (!en.active) return;
@@ -266,17 +301,7 @@ function updateEnemies() {
   enemies = enemies.filter(en => en.hp > 0);
 }
 
-function updateCoins() {
-  coins = coins.filter(coin => {
-    if (detectCollision(player, coin)) {
-      score += 5;
-      scoreDisplay.textContent = score;
-      return false;
-    }
-    return true;
-  });
-}
-
+// ❓ Verifica si el jugador activa un checkpoint
 function checkCheckpoints() {
   checkpoints.forEach(cp => {
     if (!cp.triggered && detectCollision(player, cp)) {
@@ -291,23 +316,13 @@ function checkCheckpoints() {
   });
 }
 
+// 🖼️ Dibuja todos los elementos del juego
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.save();
   ctx.translate(-player.x + canvas.width / 2, 0);
 
-    // Suelo con textura
-  if (groundTexture.complete && groundTexture.naturalWidth !== 0) {
-    const pattern = ctx.createPattern(groundTexture, 'repeat-x');
-    ctx.fillStyle = pattern;
-    ctx.fillRect(player.x - canvas.width / 2, groundY, canvas.width * 2, canvas.height - groundY);
-  } else {
-    // Fallback marrón si la textura no carga
-    ctx.fillStyle = '#654321';
-    ctx.fillRect(player.x - canvas.width / 2, groundY, canvas.width * 2, canvas.height - groundY);
-  }
-
-  // Dibujar jugador
+  // Jugador
   const img = player.direction === 'right' ? playerRightImg : playerLeftImg;
   if (img.complete && img.naturalWidth !== 0) {
     ctx.drawImage(img, player.x, player.y, player.width, player.height);
@@ -316,10 +331,6 @@ function draw() {
   // Bloques
   ctx.fillStyle = 'gray';
   blocks.forEach(b => ctx.fillRect(b.x, b.y, b.width, b.height));
-
-  // Monedas
-  ctx.fillStyle = 'gold';
-  coins.forEach(c => ctx.fillRect(c.x, c.y, c.width, c.height));
 
   // Enemigos
   enemies.forEach(e => {
@@ -342,9 +353,8 @@ function draw() {
       player.hitboxWidth,
       player.hitboxHeight
     );
-
-    ctx.strokeStyle = 'green';
     enemies.forEach(e => {
+      ctx.strokeStyle = 'green';
       ctx.strokeRect(
         e.x + e.hitboxOffsetX,
         e.y + e.hitboxOffsetY,
@@ -352,26 +362,16 @@ function draw() {
         e.hitboxHeight
       );
     });
-
-    ctx.strokeStyle = 'gray';
-    blocks.forEach(b => ctx.strokeRect(b.x, b.y, b.width, b.height));
-
-    ctx.strokeStyle = 'gold';
-    coins.forEach(c => ctx.strokeRect(c.x, c.y, c.width, c.height));
-
-    ctx.strokeStyle = 'purple';
-    checkpoints.forEach(cp => ctx.strokeRect(cp.x, cp.y, cp.width, cp.height));
   }
 
   ctx.restore();
 }
 
+// 🔁 Bucle principal del juego
 function gameLoop() {
   if (!paused) {
     updatePlayer();
-    updateBlocks();
     updateEnemies();
-    updateCoins();
     checkCheckpoints();
     draw();
   }
