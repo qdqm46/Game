@@ -6,7 +6,7 @@ const livesDisplay = document.getElementById('lives');
 
 // 🧠 Variables globales
 let walkSpeed = 4;
-let runSpeed = 7;
+let runSpeed = 20;
 let keys = {};
 let paused = false;
 let debugMode = false;
@@ -540,6 +540,7 @@ async function uploadLeaderboardToGitHub() {
     console.error('Error al conectar con GitHub:', error);
   }
 }
+
 
 
 
