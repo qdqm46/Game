@@ -43,6 +43,8 @@ const enemyRightImg = new Image();
 enemyRightImg.src = 'assets/enemy-right.png';
 const enemyLeftImg = new Image();
 enemyLeftImg.src = 'assets/enemy-left.png';
+const groundTexture = new Image();
+groundTexture.src = 'assets/ground-texture.png';
 
 let blocks = [];
 let enemies = [];
@@ -152,6 +154,7 @@ function generateWorldSegment() {
 
   lastSpawnX = segmentEnd;
 }
+
 function updatePlayer() {
   if (keys['ArrowRight']) {
     player.x += 4;
@@ -293,17 +296,32 @@ function draw() {
   ctx.save();
   ctx.translate(-player.x + canvas.width / 2, 0);
 
+    // Suelo con textura
+  if (groundTexture.complete && groundTexture.naturalWidth !== 0) {
+    const pattern = ctx.createPattern(groundTexture, 'repeat-x');
+    ctx.fillStyle = pattern;
+    ctx.fillRect(player.x - canvas.width / 2, groundY, canvas.width * 2, canvas.height - groundY);
+  } else {
+    // Fallback marrón si la textura no carga
+    ctx.fillStyle = '#654321';
+    ctx.fillRect(player.x - canvas.width / 2, groundY, canvas.width * 2, canvas.height - groundY);
+  }
+
+  // Dibujar jugador
   const img = player.direction === 'right' ? playerRightImg : playerLeftImg;
   if (img.complete && img.naturalWidth !== 0) {
     ctx.drawImage(img, player.x, player.y, player.width, player.height);
   }
 
+  // Bloques
   ctx.fillStyle = 'gray';
   blocks.forEach(b => ctx.fillRect(b.x, b.y, b.width, b.height));
 
+  // Monedas
   ctx.fillStyle = 'gold';
   coins.forEach(c => ctx.fillRect(c.x, c.y, c.width, c.height));
 
+  // Enemigos
   enemies.forEach(e => {
     const eImg = e.dx >= 0 ? enemyRightImg : enemyLeftImg;
     if (eImg.complete && eImg.naturalWidth !== 0) {
@@ -311,9 +329,11 @@ function draw() {
     }
   });
 
+  // Checkpoints
   ctx.fillStyle = 'purple';
   checkpoints.forEach(cp => ctx.fillRect(cp.x, cp.y, cp.width, cp.height));
 
+  // Modo debug
   if (debugMode) {
     ctx.strokeStyle = 'red';
     ctx.strokeRect(
