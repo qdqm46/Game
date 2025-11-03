@@ -24,10 +24,10 @@ const player = {
   hitboxOffsetX: 80, hitboxOffsetY: 60, hitboxWidth: 88, hitboxHeight: 128
 };
 
-const playerRightImg = new Image(); playerRightImg.src = 'player-right.png';
-const playerLeftImg = new Image(); playerLeftImg.src = 'player-left.png';
-const enemyRightImg = new Image(); enemyRightImg.src = 'enemy-right.png';
-const enemyLeftImg = new Image(); enemyLeftImg.src = 'enemy-left.png';
+const playerRightImg = new Image(); playerRightImg.src = 'assets/player-right.png';
+const playerLeftImg = new Image(); playerLeftImg.src = 'assets/player-left.png';
+const enemyRightImg = new Image(); enemyRightImg.src = 'assets/enemy-right.png';
+const enemyLeftImg = new Image(); enemyLeftImg.src = 'assets/enemy-left.png';
 
 // 🧱 4. Entidades del Juego
 let blocks = [], enemies = [], coins = [], checkpoints = [];
@@ -303,5 +303,6 @@ function gameLoop() {
   }
   requestAnimationFrame(gameLoop);
 }
+
 
 
