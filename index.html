@@ -3,29 +3,35 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Juego de Plataforma</title>
+  <title>Plataforma Mohamed</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Menú de inicio -->
+  <canvas id="game"></canvas>
+
   <div id="start-menu">
-    <div class="menu-box">
-      <h1>🌟 Aventura Pixelada</h1>
-      <p>Prepárate para saltar, esquivar y responder preguntas para avanzar.</p>
-      <button id="start-button">Comenzar Juego</button>
+    <button id="start-button">Comenzar juego</button>
+  </div>
+
+  <div id="hud">
+    <span>❤️ Vidas: <span id="lives">3</span></span>
+    <span>⭐ Puntos: <span id="score">0</span></span>
+  </div>
+
+  <div id="game-over-screen" class="overlay" style="display:none;">
+    <div class="game-over-box">
+      <h1>💀 GAME OVER</h1>
+      <p>Tu puntuación final: <span id="final-score"></span></p>
+      <input type="text" id="player-name" placeholder="Escribe tu nombre..." maxlength="12" />
+      <button onclick="submitScore()">Guardar puntuación</button>
+
+      <h2>🏆 Clasificación Top 10</h2>
+      <ol id="leaderboard"></ol>
+
+      <button onclick="restartGame()">🔄 Volver a jugar</button>
     </div>
   </div>
 
-  <!-- HUD del juego -->
-  <div id="hud">
-    <span>Puntos: <span id="score">0</span></span>
-    <span>Vidas: <span id="lives">3</span></span>
-  </div>
-
-  <!-- Canvas del juego -->
-  <canvas id="game" width="1280" height="720"></canvas>
-
-  <!-- Scripts -->
   <script src="game.js"></script>
 </body>
 </html>
