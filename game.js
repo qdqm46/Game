@@ -1,3 +1,4 @@
+```javascript
 // 🎮 Elementos principales
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
@@ -23,6 +24,7 @@ function resizeCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
   groundY = canvas.height - 50;
+  // Asegurarse de que lastCheckpoint.y se inicialice correctamente al inicio
   if (lastCheckpoint.y === 0) {
     lastCheckpoint.y = groundY - 248;
   }
@@ -76,45 +78,62 @@ fetch('questions.json')
 // 🧠 Cargar progreso
 const savedCheckpoint = localStorage.getItem('lastCheckpoint');
 if (savedCheckpoint) {
-  lastCheckpoint = JSON.parse(savedCheckpoint);
-  player.x = lastCheckpoint.x;
-  player.y = lastCheckpoint.y;
+  try {
+    lastCheckpoint = JSON.parse(savedCheckpoint);
+    player.x = lastCheckpoint.x;
+    player.y = lastCheckpoint.y;
+  } catch (e) {
+    console.error("Error al parsear lastCheckpoint:", e);
+    // Considerar restablecer a un checkpoint predeterminado si falla el parseo
+    lastCheckpoint = { x: 50, y: groundY - 248 };
+    player.x = lastCheckpoint.x;
+    player.y = lastCheckpoint.y;
+  }
 }
 
 // ▶️ Iniciar juego
 document.getElementById('start-button').addEventListener('click', () => {
   document.getElementById('start-menu').style.display = 'none';
   fetchLeaderboardFromGitHub();
-  generateWorldSegment();
+  generateWorldSegment(); // Asegúrate de que esta función esté definida
   gameLoop();
 });
 
 // 🎹 Teclas
-document.addEventListener('keydown', e => keys[e.code] = true);
+document.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  handleKeyDown(e); // Mover la lógica de acciones a una función separada
+});
 document.addEventListener('keyup', e => keys[e.code] = false);
 
-// 🕹️ Acciones
-document.addEventListener('keydown', e => {
-  if (e.code === 'Space' && player.grounded && !dying && !paused) {
-    player.dy = -28;
-    player.grounded = false;
+// 🕹️ Acciones - Separado para mejor legibilidad y mantenimiento
+function handleKeyDown(e) {
+  if (dying || paused) return; // No permitir acciones si el jugador está muriendo o el juego está pausado
+
+  switch (e.code) {
+    case 'Space':
+      if (player.grounded) {
+        player.dy = -28;
+        player.grounded = false;
+      }
+      break;
+    case 'KeyF':
+      player.attack = true;
+      setTimeout(() => player.attack = false, 300);
+      break;
+    case 'KeyP':
+      if (document.getElementById('pause-menu').style.display === 'flex') {
+        closePauseMenu();
+      } else {
+        openPauseMenu();
+      }
+      break;
+    case 'F5':
+      e.preventDefault();
+      debugMode = !debugMode;
+      break;
   }
-  if (e.code === 'KeyF' && !paused) {
-    player.attack = true;
-    setTimeout(() => player.attack = false, 300);
-  }
-  if (e.code === 'KeyP') {
-    if (paused && document.getElementById('pause-menu').style.display === 'flex') {
-      closePauseMenu();
-    } else {
-      openPauseMenu();
-    }
-  }
-  if (e.code === 'F5') {
-    e.preventDefault();
-    debugMode = !debugMode;
-  }
-});
+}
 
 // 🔍 Colisión
 function detectCollision(a, b) {
@@ -123,6 +142,7 @@ function detectCollision(a, b) {
          a.y < b.y + b.height &&
          a.y + a.height > b.y;
 }
+
 function updateEnemies() {
   enemies.forEach(en => {
     if (!en.active || dying) return;
@@ -189,6 +209,7 @@ function checkCheckpoints() {
   checkpoints.forEach(cp => {
     if (!cp.triggered && detectCollision(player, cp)) {
       cp.triggered = true;
+      paused = true; // Pausar el juego al activar el checkpoint
       const respuesta = prompt(cp.question);
       if (respuesta && respuesta.toLowerCase() === cp.answer.toLowerCase()) {
         alert("¡Progreso guardado!");
@@ -204,6 +225,7 @@ function checkCheckpoints() {
       } else {
         alert("Respuesta incorrecta.");
       }
+      paused = false; // Reanudar el juego después de la interacción
     }
   });
 }
@@ -253,6 +275,30 @@ function draw() {
   ctx.fillStyle = 'purple';
   checkpoints.forEach(cp => ctx.fillRect(cp.x, cp.y, cp.width, cp.height));
 
+  if (debugMode) {
+        // Dibujar hitboxes del jugador y los enemigos
+        ctx.strokeStyle = 'red'; // Color del hitbox
+        ctx.lineWidth = 2; // Ancho de la línea del hitbox
+
+        // Hitbox del jugador
+        ctx.strokeRect(
+            player.x + player.hitboxOffsetX,
+            player.y + player.hitboxOffsetY,
+            player.hitboxWidth,
+            player.hitboxHeight
+        );
+
+        // Hitboxes de los enemigos
+        enemies.forEach(enemy => {
+            ctx.strokeRect(
+                enemy.x + enemy.hitboxOffsetX,
+                enemy.y + enemy.hitboxOffsetY,
+                enemy.hitboxWidth,
+                enemy.hitboxHeight
+            );
+        });
+    }
+
   ctx.restore();
 }
 
@@ -262,7 +308,7 @@ function gameLoop() {
       draw();
       handleDeathAnimation();
     } else {
-      updatePlayer();
+      updatePlayer(); // Asegúrate de que esta función esté definida
       updateEnemies();
       updateCoins();
       checkCheckpoints();
@@ -381,12 +427,9 @@ function openPauseMenu() {
   const leaderboard = JSON.parse(localStorage.getItem('leaderboard') || '[]');
   leaderboard.forEach(entry => {
     const li = document.createElement('li');
-    leaderboard.forEach(entry => {
-      const li = document.createElement('li');
-      li.textContent = `${entry.name} — ${entry.score} pts`;
-      list.appendChild(li);
-    });
-  }
+    li.textContent = `${entry.name} — ${entry.score} pts`;
+    list.appendChild(li);
+  });
 
   document.getElementById('pause-menu').style.display = 'flex';
   paused = true;
@@ -396,3 +439,4 @@ function closePauseMenu() {
   document.getElementById('pause-menu').style.display = 'none';
   paused = false;
 }
+```
